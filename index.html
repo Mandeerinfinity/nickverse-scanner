@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>NICK-VERSE Scanner</title>
+<meta name="description" content="NICK-VERSE Scanner: a handheld HUD sensor gadget for your phone. A CINCO Corporation Product.">
+<meta name="theme-color" content="#03101a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body data-theme="arc">
+
+<canvas id="bg-canvas" aria-hidden="true"></canvas>
+<div class="bg-wrap" aria-hidden="true"><div class="bg-glow"></div><div class="bg-grid"></div></div>
+<div class="fx-scanlines" aria-hidden="true"></div>
+<div class="fx-scanbar" aria-hidden="true"></div>
+<div class="fx-vignette" aria-hidden="true"></div>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="nv-mark" viewBox="0 0 100 100">
+      <circle cx="50" cy="50" r="45" fill="none" stroke="currentColor" stroke-width="3" opacity=".55"/>
+      <circle cx="50" cy="50" r="37" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="4 5"/>
+      <polygon points="50,20 76,35 76,65 50,80 24,65 24,35" fill="none" stroke="currentColor" stroke-width="4" stroke-linejoin="round"/>
+      <path d="M38 64V36l24 28V36" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M50 5A45 45 0 0 1 95 50" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round"/>
+    </symbol>
+  </defs>
+</svg>
+
+<!-- Boot -->
+<div id="boot" aria-hidden="true">
+  <div class="boot-inner">
+    <div class="boot-radar"><i></i><svg class="boot-mark" viewBox="0 0 100 100"><use href="#nv-mark"/></svg></div>
+    <div class="boot-title">NICK-VERSE <span>SCANNER</span></div>
+    <div class="boot-sub mono">CINCO SCAN-O-MATIC 9000 · FIRMWARE 9.0.0-ish</div>
+    <div class="boot-lines" id="boot-lines"></div>
+    <div class="boot-bar"><i id="boot-progress"></i></div>
+    <div class="boot-skip">tap anywhere to skip</div>
+  </div>
+</div>
+
+<div id="app">
+  <header class="topbar glass">
+    <button class="brand" id="brand" title="NICK-VERSE Scanner">
+      <svg class="brand-mark" viewBox="0 0 100 100"><use href="#nv-mark"/></svg>
+      <span class="brand-text">
+        <span class="brand-name">NICK<span>-</span>VERSE</span>
+        <span class="brand-sub">SCANNER // HANDHELD SENSOR ARRAY <em>v9.0</em></span>
+      </span>
+    </button>
+    <div class="top-status">
+      <div class="chip" id="chip-mode" title="Sensor mode"><i class="dot"></i><span id="chip-mode-text">SENSORS: INIT</span></div>
+      <div class="chip" id="chip-threat" title="Threat level"><i class="dot warn"></i><span id="chip-threat-text">THREAT 00</span></div>
+      <div class="chip mono" id="chip-timer" hidden><i class="dot"></i><span id="chip-timer-text">00:00</span></div>
+    </div>
+    <nav class="top-actions">
+      <button class="icon-btn" id="btn-protocols" title="Protocols (P)"><svg viewBox="0 0 24 24"><path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6z"/><path d="M9 12l2 2 4-4"/></svg></button>
+      <button class="icon-btn" id="btn-theme" title="Cycle theme (T)"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 0 0 18z" class="fill"/></svg></button>
+      <button class="icon-btn" id="btn-mute" title="Sound on/off (M)" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M4 9h4l5-4v14l-5-4H4z"/><path class="snd-on" d="M16 9a4 4 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11"/><path class="snd-off" d="M16 9l5 6M21 9l-5 6"/></svg></button>
+      <button class="icon-btn" id="btn-help" title="Keyboard shortcuts (?)"><span class="txt">?</span></button>
+      <button class="icon-btn" id="btn-settings" title="Settings (S)"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
+      <button class="icon-btn" id="btn-fullscreen" title="Fullscreen (F)"><svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
+    </nav>
+  </header>
+
+  <main class="layout">
+    <!-- LEFT -->
+    <aside class="col col-left">
+      <section class="panel glass" id="array-panel" aria-label="Sensor array">
+        <header class="panel-head"><span class="ph-idx">01</span><h2>Sensor Array</h2><span class="ph-live"><i></i>LIVE</span></header>
+        <div class="array-grid" id="array-grid">
+          <button class="arr" data-go="nav"><span class="k">Heading</span><span class="v mono" id="ar-heading">---°</span><span class="s" id="ar-heading-s">--</span></button>
+          <button class="arr" data-go="nav"><span class="k">Tilt</span><span class="v mono" id="ar-tilt">--</span><span class="s" id="ar-tilt-s">pitch / roll</span></button>
+          <button class="arr" data-go="motion"><span class="k">G-Force</span><span class="v mono" id="ar-g">-.--g</span><span class="s" id="ar-g-s">peak --</span></button>
+          <button class="arr" data-go="audio"><span class="k">Sound</span><span class="v mono" id="ar-db">-- dB</span><span class="s" id="ar-db-s">mic idle</span></button>
+          <button class="arr" data-go="light"><span class="k">Light</span><span class="v mono" id="ar-lux">-- lx</span><span class="s" id="ar-lux-s">estimate</span></button>
+          <button class="arr" data-go="system"><span class="k">Power</span><span class="v mono" id="ar-bat">--</span><span class="s" id="ar-bat-s">--</span></button>
+        </div>
+      </section>
+      <section class="panel glass" id="mini-radar-panel" aria-label="Proximity radar">
+        <header class="panel-head"><span class="ph-idx">02</span><h2>Sonar</h2><span class="ph-sub mono" id="mini-radar-count">0 CONTACTS</span></header>
+        <button class="mini-radar" id="mini-radar-btn" title="Open radar (7)"><canvas id="mini-radar"></canvas></button>
+      </section>
+      <button class="panel glass cinco-ad" id="cinco-ad" aria-label="CINCO advertisement: tap for details">
+        <span class="ad-top"><span class="ad-badge">AD</span><span class="c5">CINCO</span><span class="ad-sponsor mono">SPONSORED TRANSMISSION</span></span>
+        <span class="ad-body" id="ad-body">
+          <span class="ad-icon" id="ad-icon"></span>
+          <span class="ad-copy">
+            <span class="ad-also">Also try the</span>
+            <span class="ad-name" id="ad-name">CINCO</span>
+            <span class="ad-line" id="ad-line"></span>
+          </span>
+        </span>
+        <span class="ad-foot"><span class="ad-cta">Tap to learn more ›</span><span class="ad-dots" id="ad-dots"></span></span>
+      </button>
+    </aside>
+
+    <!-- CENTER: modules -->
+    <section class="col col-center" aria-label="Scanner modules">
+      <nav class="tabs glass" id="tabs" role="tablist" aria-label="Modules">
+        <button role="tab" data-tab="scan"><svg viewBox="0 0 24 24"><path d="M4 8V4h4M20 8V4h-4M4 16v4h4M20 16v4h-4"/><circle cx="12" cy="12" r="3.5"/></svg><span>Scan</span><kbd>1</kbd></button>
+        <button role="tab" data-tab="motion"><svg viewBox="0 0 24 24"><path d="M3 12h3l2-6 4 12 3-9 2 3h4"/></svg><span>Motion</span><kbd>2</kbd></button>
+        <button role="tab" data-tab="nav"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/></svg><span>Nav</span><kbd>3</kbd></button>
+        <button role="tab" data-tab="audio"><svg viewBox="0 0 24 24"><path d="M4 10v4M8 7v10M12 4v16M16 8v8M20 11v2"/></svg><span>Audio</span><kbd>4</kbd></button>
+        <button role="tab" data-tab="threat"><svg viewBox="0 0 24 24"><path d="M12 3l9.5 17h-19z"/><path d="M12 10v4.5M12 17.2v.3"/></svg><span>Threat</span><kbd>5</kbd></button>
+        <button role="tab" data-tab="light"><svg viewBox="0 0 24 24"><path d="M8 3h8v4l-2 3v11h-4V10L8 7z"/><path d="M12 13v2M8 7h8"/></svg><span>Light</span><kbd>6</kbd></button>
+        <button role="tab" data-tab="radar"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.5"/><path d="M12 12l6.4-6.4"/></svg><span>Radar</span><kbd>7</kbd></button>
+        <button role="tab" data-tab="system"><svg viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="14" rx="2"/><path d="M9.5 9.5h5v5h-5zM9 2v3M15 2v3M9 19v3M15 19v3M2 9h3M2 15h3M19 9h3M19 15h3"/></svg><span>System</span><kbd>8</kbd></button>
+        <button role="tab" data-tab="log"><svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg><span>Log</span><kbd>9</kbd></button>
+        <button role="tab" data-tab="timer"><svg viewBox="0 0 24 24"><circle cx="12" cy="14" r="7"/><path d="M12 14v-4M10 3h4M12 3v4M18 7l1.5-1.5"/></svg><span>Timer</span><kbd>0</kbd></button>
+      </nav>
+
+      <div class="modules device" id="modules">
+
+        <!-- 1 SCAN -->
+        <section class="panel glass module" data-mod="scan" role="tabpanel" aria-label="Optical scanner">
+          <header class="panel-head"><span class="ph-idx">OPT</span><h2>Optical Scanner</h2><span class="badge" id="cam-badge">OFFLINE</span></header>
+          <div class="cam-wrap" id="cam-wrap">
+            <canvas id="cam-canvas" aria-label="Camera view with HUD overlay"></canvas>
+            <video id="cam-video" playsinline muted autoplay></video>
+            <div class="cam-start" id="cam-start">
+              <button class="engage" id="cam-engage"><span class="engage-rings"><i></i><i></i><i></i></span><span class="engage-txt">ENGAGE<br>OPTICS</span></button>
+              <div class="cam-start-note">Camera access is used live on this device only. Nothing is uploaded, Sir.</div>
+              <button class="linkish" id="cam-sim">No camera? Use the simulated feed</button>
+            </div>
+            <div class="cam-flash" id="cam-flash"></div>
+          </div>
+          <div class="cam-controls">
+            <div class="seg" id="cam-filters" role="radiogroup" aria-label="Camera filter">
+              <button data-filter="normal" class="on">Normal</button>
+              <button data-filter="night">Night-Vis</button>
+              <button data-filter="thermal">Thermal</button>
+              <button data-filter="edge">Edge</button>
+            </div>
+            <div class="zoom-row"><span class="mono">ZOOM</span><input type="range" id="cam-zoom" min="1" max="8" step="0.1" value="1" aria-label="Zoom"><span class="mono" id="cam-zoom-v">1.0×</span></div>
+            <div class="btn-row">
+              <button class="btn ghost sq" id="cam-flip" title="Switch camera">⇄</button>
+              <button class="btn ghost" id="cam-qr" aria-pressed="false" title="QR / barcode mode (Q)">QR</button>
+              <button class="btn primary scan-btn" id="cam-scan" title="Scan (Space)"><span>SCAN</span></button>
+              <button class="btn ghost" id="cam-resume" disabled>Resume</button>
+            </div>
+          </div>
+          <div class="scan-report" id="scan-report" hidden>
+            <div class="rep-head"><span class="rep-swatch" id="rep-swatch"></span><div><div class="rep-color" id="rep-color">--</div><div class="rep-hex mono" id="rep-hex">#------</div></div><div class="rep-bright"><span class="mono" id="rep-bright">--%</span><small>brightness</small></div></div>
+            <div class="rep-palette" id="rep-palette"></div>
+            <div class="rep-analysis">
+              <div class="rep-tag mono">⚠ ENTERTAINMENT ANALYSIS · NOT REAL · CINCO FUN-LABS™</div>
+              <div class="rep-object" id="rep-object">--</div>
+              <ul class="rep-metrics" id="rep-metrics"></ul>
+              <div class="rep-verdict" id="rep-verdict">--</div>
+            </div>
+          </div>
+          <div class="qr-card" id="qr-card" hidden>
+            <div class="qr-k mono" id="qr-format">QR CODE</div>
+            <div class="qr-v" id="qr-value">--</div>
+            <div class="btn-row"><button class="btn ghost" id="qr-copy">Copy</button><button class="btn ghost" id="qr-dismiss">Dismiss</button></div>
+            <div class="hint">Links are shown, never opened automatically.</div>
+          </div>
+          <div class="readouts">
+            <div class="ro"><span class="k">Center Sample</span><span class="v"><i class="sw" id="ro-sw"></i><span class="mono" id="ro-hex">#------</span></span></div>
+            <div class="ro"><span class="k">Luminance</span><span class="v mono" id="ro-luma">--%</span></div>
+            <div class="ro"><span class="k">Feed</span><span class="v mono" id="ro-res">--</span></div>
+            <div class="ro"><span class="k">QR Engine</span><span class="v mono" id="ro-qr">--</span></div>
+          </div>
+        </section>
+
+        <!-- 2 MOTION -->
+        <section class="panel glass module" data-mod="motion" role="tabpanel" aria-label="Motion sensors">
+          <header class="panel-head"><span class="ph-idx">IMU</span><h2>Motion &amp; Tilt</h2><span class="badge" id="motion-badge">WAITING</span></header>
+          <div class="perm-bar" id="perm-bar" hidden><span>iOS requires permission for motion sensors.</span><button class="btn primary" id="perm-btn">Enable Sensors</button></div>
+          <div class="graph-card"><div class="graph-head"><span>Accelerometer</span><span class="legend"><i class="lx"></i>X<i class="ly"></i>Y<i class="lz"></i>Z</span><span class="mono gv" id="acc-vals">--</span></div><canvas class="graph" id="acc-graph"></canvas></div>
+          <div class="graph-card"><div class="graph-head"><span>Gyroscope</span><span class="legend"><i class="lx"></i>α<i class="ly"></i>β<i class="lz"></i>γ</span><span class="mono gv" id="gyro-vals">--</span></div><canvas class="graph" id="gyro-graph"></canvas></div>
+          <div class="motion-row">
+            <div class="gauge-card"><canvas id="g-gauge"></canvas><button class="btn ghost sm" id="g-reset">Reset Peak</button></div>
+            <div class="shake-card" id="shake-card">
+              <div class="shake-k">Shake Detector</div>
+              <div class="shake-n mono" id="shake-n">0</div>
+              <div class="shake-s" id="shake-s">Shake the device, Sir.</div>
+              <div class="range-row"><span>Sensitivity</span><input type="range" id="shake-sens" min="1" max="10" value="5" aria-label="Shake sensitivity"></div>
+              <button class="btn ghost sm" id="sim-shake">Simulate Shake</button>
+            </div>
+          </div>
+          <div class="ori-row">
+            <div class="ro"><span class="k">α Yaw</span><span class="v mono" id="ori-a">--</span></div>
+            <div class="ro"><span class="k">β Pitch</span><span class="v mono" id="ori-b">--</span></div>
+            <div class="ro"><span class="k">γ Roll</span><span class="v mono" id="ori-g">--</span></div>
+          </div>
+          <div class="hint" id="motion-hint">Desktop? The simulation follows your mouse. Move it about.</div>
+        </section>
+
+        <!-- 3 NAV -->
+        <section class="panel glass module" data-mod="nav" role="tabpanel" aria-label="Compass and level">
+          <header class="panel-head"><span class="ph-idx">NAV</span><h2>Compass &amp; Level</h2><span class="badge" id="nav-badge">WAITING</span></header>
+          <div class="nav-grid">
+            <div class="nav-card"><canvas id="compass"></canvas>
+              <div class="nav-read"><span class="mono big" id="cmp-deg">---°</span><span class="cmp-dir" id="cmp-dir">--</span></div>
+              <div class="btn-row"><button class="btn ghost sm" id="cmp-mark">Mark Bearing</button><button class="btn ghost sm" id="cmp-clear">Clear</button></div>
+            </div>
+            <div class="nav-card"><canvas id="level"></canvas>
+              <div class="nav-read"><span class="mono big" id="lvl-read">0.0° / 0.0°</span><span class="cmp-dir" id="lvl-state">--</span></div>
+              <div class="btn-row"><button class="btn ghost sm" id="lvl-zero">Calibrate Zero</button><button class="btn ghost sm" id="lvl-reset">Reset</button></div>
+            </div>
+          </div>
+          <div class="hint" id="nav-hint">Hold the device flat for the bubble level. Compass accuracy depends on your phone's magnetometer.</div>
+        </section>
+
+        <!-- 4 AUDIO -->
+        <section class="panel glass module" data-mod="audio" role="tabpanel" aria-label="Sound level meter">
+          <header class="panel-head"><span class="ph-idx">SPL</span><h2>Acoustic Analyser</h2><span class="badge" id="audio-badge">MIC IDLE</span></header>
+          <div class="audio-top">
+            <div class="gauge-card big"><canvas id="db-gauge"></canvas></div>
+            <div class="audio-reads">
+              <div class="ro"><span class="k">Level (approx)</span><span class="v mono" id="au-db">-- dB</span></div>
+              <div class="ro"><span class="k">Peak</span><span class="v mono" id="au-peak">-- dB</span></div>
+              <div class="ro"><span class="k">Average</span><span class="v mono" id="au-avg">-- dB</span></div>
+              <div class="ro"><span class="k">Dominant</span><span class="v mono" id="au-freq">-- Hz</span></div>
+              <div class="ro wide"><span class="k">Classification</span><span class="v" id="au-class">Awaiting audio</span></div>
+            </div>
+          </div>
+          <div class="btn-row"><button class="btn primary" id="au-start">Start Mic</button><button class="btn ghost" id="au-sim">Simulate</button><button class="btn ghost" id="au-reset">Reset Peak</button></div>
+          <div class="graph-card"><div class="graph-head"><span>Spectrum</span><span class="mono gv" id="au-range">20 Hz – 20 kHz</span></div><canvas class="graph tall" id="au-spectrum"></canvas></div>
+          <div class="audio-dual">
+            <div class="graph-card"><div class="graph-head"><span>Waveform</span></div><canvas class="graph" id="au-wave"></canvas></div>
+            <div class="graph-card"><div class="graph-head"><span>Spectrogram</span></div><canvas class="graph" id="au-spectro"></canvas></div>
+          </div>
+          <div class="hint">Phone microphones are not calibrated. Readings are an approximate dB estimate, not a certified SPL measurement.</div>
+        </section>
+
+        <!-- 5 THREAT -->
+        <section class="panel glass module" data-mod="threat" role="tabpanel" aria-label="Threat assessment">
+          <header class="panel-head"><span class="ph-idx">TAC</span><h2>Threat Assessment</h2><span class="badge" id="threat-badge">NOMINAL</span></header>
+          <div class="threat-top">
+            <div class="threat-gauge"><canvas id="threat-canvas"></canvas></div>
+            <div class="threat-side">
+              <div class="threat-level" id="threat-level">NOMINAL</div>
+              <div class="threat-desc" id="threat-desc">No credible threats. Several incredible ones.</div>
+              <div class="threat-factors" id="threat-factors"></div>
+            </div>
+          </div>
+          <div class="btn-row wrap"><button class="btn ghost" id="th-assess">Run Assessment</button><button class="btn danger" id="th-red">Engage Red Alert</button></div>
+          <div class="list-head mono"><span>Contact</span><span>Bearing</span><span>Risk</span></div>
+          <ul class="threat-list" id="threat-list"></ul>
+          <div class="hint">Threat data is fictional and for entertainment. The sock is probably fine.</div>
+        </section>
+
+        <!-- 6 LIGHT -->
+        <section class="panel glass module" data-mod="light" role="tabpanel" aria-label="Flashlight, strobe, morse and light meter">
+          <header class="panel-head"><span class="ph-idx">LUM</span><h2>Photon Suite</h2><span class="badge" id="light-badge">STANDBY</span></header>
+          <div class="light-grid">
+            <div class="light-card">
+              <div class="lc-k">Flashlight</div>
+              <button class="power" id="torch-btn" aria-pressed="false" title="Flashlight (L)"><svg viewBox="0 0 24 24"><path d="M12 3v8"/><path d="M6.4 6.6a8 8 0 1 0 11.2 0"/></svg></button>
+              <div class="lc-s" id="torch-mode">Torch if available · screen-light fallback</div>
+              <div class="swatches" id="screen-colors" aria-label="Screen light colour"></div>
+            </div>
+            <div class="light-card">
+              <div class="lc-k">Light Meter</div>
+              <canvas id="lux-gauge"></canvas>
+              <div class="lc-s" id="lux-src">Source: --</div>
+            </div>
+          </div>
+          <div class="sub-card">
+            <div class="sub-head"><span>Strobe</span><span class="mono" id="strobe-hz-v">4 Hz</span></div>
+            <div class="range-row"><input type="range" id="strobe-hz" min="1" max="12" step="1" value="4" aria-label="Strobe frequency"><button class="btn ghost sm" id="strobe-btn" aria-pressed="false">Strobe</button></div>
+            <div class="warn-note">⚠ Flashing lights may affect photosensitive people. Strobe requires a second tap to confirm.</div>
+          </div>
+          <div class="sub-card">
+            <div class="sub-head"><span>Morse Transmitter</span><span class="mono" id="morse-wpm-v">12 WPM</span></div>
+            <div class="morse-in"><input type="text" id="morse-text" maxlength="60" value="HELLO SIR" aria-label="Morse message"><button class="btn primary sm" id="morse-go">Transmit</button><button class="btn ghost sm" id="morse-sos">SOS</button></div>
+            <div class="range-row"><span>Speed</span><input type="range" id="morse-wpm" min="5" max="25" value="12" aria-label="Morse speed"><label class="mini-check"><input type="checkbox" id="morse-beep" checked> Beep</label></div>
+            <div class="morse-out"><span class="lamp" id="morse-lamp"></span><div class="morse-code mono" id="morse-code"></div></div>
+          </div>
+        </section>
+
+        <!-- 7 RADAR -->
+        <section class="panel glass module" data-mod="radar" role="tabpanel" aria-label="Radar">
+          <header class="panel-head"><span class="ph-idx">SNR</span><h2>Sonar Sweep</h2><span class="badge warn" id="radar-badge">SIMULATED</span></header>
+          <div class="radar-wrap"><canvas id="radar"></canvas></div>
+          <div class="radar-ctl">
+            <div class="seg" id="radar-range"><button data-r="10">10 m</button><button data-r="50" class="on">50 m</button><button data-r="250">250 m</button></div>
+            <label class="mini-check"><input type="checkbox" id="radar-ping" checked> Ping</label>
+            <button class="btn ghost sm" id="radar-scan">Pulse</button>
+          </div>
+          <div class="list-head mono"><span>Contact</span><span>Brg / Rng</span><span>Class</span></div>
+          <ul class="contact-list" id="contact-list"></ul>
+          <div class="hint">Contacts are fictional entertainment. No actual pigeons were tracked.</div>
+        </section>
+
+        <!-- 8 SYSTEM -->
+        <section class="panel glass module" data-mod="system" role="tabpanel" aria-label="System">
+          <header class="panel-head"><span class="ph-idx">SYS</span><h2>System Diagnostics</h2><span class="ph-live"><i></i>LIVE</span></header>
+          <div class="status-grid">
+            <div class="stat"><div class="stat-label">Power Cell</div><div class="stat-val mono" id="st-battery">--</div><div class="meter"><i id="st-battery-bar"></i></div><div class="stat-note" id="st-battery-note">Querying…</div></div>
+            <div class="stat"><div class="stat-label">Uplink</div><div class="stat-val mono" id="st-net">--</div><div class="meter"><i id="st-net-bar"></i></div><div class="stat-note" id="st-net-note">--</div></div>
+            <div class="stat"><div class="stat-label">Render</div><div class="stat-val mono" id="st-fps">-- FPS</div><div class="spark"><canvas id="st-spark" width="200" height="28"></canvas></div><div class="stat-note" id="st-dpr">--</div></div>
+            <div class="stat"><div class="stat-label">Uptime</div><div class="stat-val mono" id="st-uptime">00:00:00</div><div class="meter pulse"><i style="width:100%"></i></div><div class="stat-note" id="st-uptime-note">Session</div></div>
+          </div>
+          <div class="dev-list" id="dev-list"></div>
+          <h3 class="sub-title">Sensor Capability Matrix</h3>
+          <div class="cap-grid" id="cap-grid"></div>
+        </section>
+
+        <!-- 9 LOG -->
+        <section class="panel glass module" data-mod="log" role="tabpanel" aria-label="Scan log">
+          <header class="panel-head"><span class="ph-idx">LOG</span><h2>Scan Log</h2><span class="ph-sub mono" id="log-count">0 ENTRIES</span></header>
+          <div class="log-tools"><button class="btn ghost sm" id="log-export">Export JSON</button><button class="btn ghost sm" id="log-clear">Clear All</button></div>
+          <div class="log-grid" id="log-grid"></div>
+          <div class="hint">Stored only in this browser (localStorage). Up to 30 entries; oldest are recycled.</div>
+        </section>
+
+        <!-- 0 TIMER -->
+        <section class="panel glass module" data-mod="timer" role="tabpanel" aria-label="Scan timer">
+          <header class="panel-head"><span class="ph-idx">CHR</span><h2>Scan Timer</h2><span class="ph-sub mono" id="tm-state">STANDBY</span></header>
+          <div class="sw-dial">
+            <svg viewBox="0 0 200 200" class="ring-svg">
+              <circle cx="100" cy="100" r="88" class="ring-bg"/>
+              <g id="tm-ticks"></g>
+              <circle cx="100" cy="100" r="88" class="ring-fg" id="tm-ring" pathLength="100"/>
+              <circle cx="100" cy="100" r="74" class="ring-bg thin"/>
+              <circle cx="100" cy="100" r="74" class="ring-fg thin alt" id="tm-ring2" pathLength="100"/>
+            </svg>
+            <div class="dial-readout">
+              <div class="big mono" id="tm-main">00:00<span>.00</span></div>
+              <div class="small mono" id="tm-sub">MARK 01 · 00:00.00</div>
+            </div>
+          </div>
+          <div class="btn-row"><button class="btn ghost" id="tm-mark" disabled>Mark</button><button class="btn primary" id="tm-start">Start</button><button class="btn ghost" id="tm-reset" disabled>Reset</button></div>
+          <div class="btn-row" style="margin-top:10px"><button class="btn ghost" id="tm-auto">Timed Auto-Scan (5s)</button></div>
+          <div class="list-head mono"><span>#</span><span>Split</span><span>Total</span></div>
+          <ol class="lap-list" id="tm-marks"><li class="empty">No marks yet, Sir.</li></ol>
+        </section>
+      </div>
+    </section>
+
+    <!-- RIGHT -->
+    <aside class="col col-right">
+      <section class="panel glass jarvis-panel" aria-label="JARVIS assistant">
+        <header class="panel-head"><span class="ph-idx">AI</span><h2>J.A.R.V.I.S.</h2><span class="ph-sub mono" id="jv-state">ONLINE</span></header>
+        <div class="jv-top">
+          <button class="jarvis-orb" id="jv-orb" title="Status briefing (J)"><canvas id="jv-canvas"></canvas></button>
+          <div class="jarvis-log" id="jv-log" aria-live="polite"></div>
+        </div>
+        <div class="btn-row wrap">
+          <button class="btn primary" id="jv-brief">Status Briefing</button>
+          <button class="btn ghost" id="jv-analyse">Analyse</button>
+          <button class="btn ghost" id="jv-quip">Wit, Please</button>
+        </div>
+        <div class="hint" id="jv-voice">Voice: detecting…</div>
+      </section>
+      <section class="panel glass" aria-label="Recent scans">
+        <header class="panel-head"><span class="ph-idx">03</span><h2>Recent Scans</h2><button class="linkish mono" data-go="log">VIEW ALL ›</button></header>
+        <div class="recent" id="recent"></div>
+      </section>
+      <section class="panel glass threat-mini" aria-label="Threat meter">
+        <header class="panel-head"><span class="ph-idx">04</span><h2>Threat Index</h2><span class="ph-sub mono" id="tmini-lvl">NOMINAL</span></header>
+        <div class="tmini-bar"><i id="tmini-fill"></i><span class="mono" id="tmini-val">00</span></div>
+        <div class="tmini-ticks mono"><span>NOMINAL</span><span>GUARDED</span><span>ELEVATED</span><span>HIGH</span><span>RED</span></div>
+      </section>
+    </aside>
+  </main>
+
+  <footer class="footer">
+    <div class="cinco-stamp">
+      <div class="cinco-logo"><span class="c5">CINCO</span><span class="corp">Corporation</span></div>
+      <div class="cinco-tag">Seeing Things, Now With More Things.<sup>™</sup></div>
+    </div>
+    <div class="cinco-foot">
+      <span>A CINCO Corporation Product</span>
+      <i></i><span>Model: CINCO Nick-Verse Scan-O-Matic 9000</span>
+      <i></i><span class="fine">Warranty void if device is pointed at anything, including itself. Scan results are not legally binding in this or any adjacent dimension.</span>
+    </div>
+    <div class="foot-meta mono"><span>NICK-VERSE © Nick</span><i></i><a href="https://mandeerinfinity.github.io/nickverse-watch/" class="foot-link">Companion: NICK-VERSE Watch</a><i></i><span class="kbd-hint">Press <kbd>?</kbd> for shortcuts</span></div>
+  </footer>
+</div>
+
+<!-- Settings drawer -->
+<aside class="drawer glass" id="settings" aria-hidden="true" aria-label="Settings">
+  <header class="panel-head"><span class="ph-idx">CFG</span><h2>Settings</h2><button class="icon-btn sm" data-close="settings" title="Close">✕</button></header>
+  <div class="set-group"><h3>Theme</h3><div class="theme-cards" id="theme-cards"></div></div>
+  <div class="set-group">
+    <h3>Ambient Effects</h3>
+    <label class="switch"><input type="checkbox" id="set-particles"><i></i>Particle field</label>
+    <label class="switch"><input type="checkbox" id="set-scanlines"><i></i>Scanlines</label>
+    <label class="switch"><input type="checkbox" id="set-parallax"><i></i>Parallax tilt</label>
+  </div>
+  <div class="set-group">
+    <h3>Feedback</h3>
+    <label class="switch"><input type="checkbox" id="set-uisound"><i></i>Sound effects</label>
+    <label class="switch"><input type="checkbox" id="set-haptics"><i></i>Haptics (vibration)</label>
+    <label class="switch"><input type="checkbox" id="set-speak"><i></i>JARVIS speaks aloud</label>
+    <label class="switch"><input type="checkbox" id="set-commentary"><i></i>JARVIS auto-commentary</label>
+    <select id="set-voice" aria-label="JARVIS voice"></select>
+    <div class="range-row"><span>Volume</span><input type="range" id="set-volume" min="0" max="1" step="0.05"></div>
+  </div>
+  <div class="set-group">
+    <h3>Sensors</h3>
+    <label class="switch"><input type="checkbox" id="set-forcesim"><i></i>Force simulated sensors</label>
+    <label class="switch"><input type="checkbox" id="set-wakelock"><i></i>Keep screen awake</label>
+    <div class="range-row"><span>Mic offset</span><input type="range" id="set-micoffset" min="70" max="110" step="1"><span class="mono" id="set-micoffset-v">94</span></div>
+  </div>
+  <div class="set-group">
+    <h3>CINCO</h3>
+    <label class="switch"><input type="checkbox" id="set-ads"><i></i>Sponsored transmissions</label>
+    <label class="switch"><input type="checkbox" id="set-recalls"><i></i>Product recall notices</label>
+  </div>
+  <div class="set-group">
+    <h3>Install &amp; Data</h3>
+    <button class="btn ghost full" id="set-install" disabled>Install as app</button>
+    <p class="hint">Works offline once loaded. <span id="sw-status"></span></p>
+    <button class="btn ghost full" id="set-reset">Reset settings</button>
+  </div>
+  <p class="fine-print">CINCO Corporation is not responsible for anything detected, undetected, or detected incorrectly. Scanner contains 0% real sensors from the future. Not affiliated with any actual billionaire, starship, or galaxy. Do not scan the sun.</p>
+</aside>
+
+<!-- Protocols -->
+<div class="modal" id="protocols" aria-hidden="true" role="dialog" aria-label="Protocols">
+  <div class="modal-card glass">
+    <header class="panel-head"><span class="ph-idx">PRT</span><h2>Protocols</h2><button class="icon-btn sm" data-close="protocols">✕</button></header>
+    <div class="proto-grid" id="proto-grid">
+      <button class="proto" data-proto="standard"><b>◎</b><span class="pn">Standard</span><span class="pd">All systems normal. Boringly so.</span></button>
+      <button class="proto" data-proto="stealth"><b>◐</b><span class="pn">Stealth</span><span class="pd">Dim, quiet, mysterious. Very ninja.</span></button>
+      <button class="proto" data-proto="party"><b>✦</b><span class="pn">Party</span><span class="pd">Confetti. Lights. Questionable beats.</span></button>
+      <button class="proto danger" data-proto="redalert"><b>▲</b><span class="pn">Red Alert</span><span class="pd">Klaxons and very serious faces.</span></button>
+      <button class="proto" data-proto="diagnostics"><b>⌬</b><span class="pn">Diagnostics</span><span class="pd">Full self-test with running commentary.</span></button>
+      <button class="proto" data-proto="briefing"><b>◉</b><span class="pn">Briefing</span><span class="pd">JARVIS reads you the situation.</span></button>
+    </div>
+    <p class="hint">Rumour has it there's a secret executive protocol. CINCO denies everything.</p>
+  </div>
+</div>
+
+<!-- Help -->
+<div class="modal" id="help" aria-hidden="true" role="dialog" aria-label="Keyboard shortcuts">
+  <div class="modal-card glass">
+    <header class="panel-head"><span class="ph-idx">KB</span><h2>Keyboard Shortcuts</h2><button class="icon-btn sm" data-close="help">✕</button></header>
+    <div class="kb-grid">
+      <div><kbd>1</kbd>–<kbd>0</kbd><span>Switch module</span></div>
+      <div><kbd>Space</kbd><span>Scan / primary action</span></div>
+      <div><kbd>Q</kbd><span>QR mode</span></div>
+      <div><kbd>V</kbd><span>Cycle camera filter</span></div>
+      <div><kbd>L</kbd><span>Flashlight</span></div>
+      <div><kbd>R</kbd><span>Red alert on / off</span></div>
+      <div><kbd>J</kbd><span>JARVIS briefing</span></div>
+      <div><kbd>P</kbd><span>Protocols</span></div>
+      <div><kbd>T</kbd><span>Cycle theme</span></div>
+      <div><kbd>M</kbd><span>Sound on / off</span></div>
+      <div><kbd>K</kbd><span>Simulate shake</span></div>
+      <div><kbd>F</kbd><span>Fullscreen</span></div>
+      <div><kbd>S</kbd><span>Settings</span></div>
+      <div><kbd>Esc</kbd><span>Close / stand down</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- Log detail -->
+<div class="modal" id="log-detail" aria-hidden="true" role="dialog" aria-label="Log entry">
+  <div class="modal-card glass">
+    <header class="panel-head"><span class="ph-idx" id="ld-type">SCAN</span><h2 id="ld-title">Entry</h2><button class="icon-btn sm" data-close="log-detail">✕</button></header>
+    <div class="ld-body" id="ld-body"></div>
+    <div class="btn-row"><button class="btn ghost" id="ld-delete">Delete</button><button class="btn primary" data-close="log-detail">Close</button></div>
+  </div>
+</div>
+
+<!-- CINCO infomercial -->
+<div class="modal infomercial" id="promo" aria-hidden="true" role="dialog" aria-labelledby="promo-name">
+  <div class="promo-card glass">
+    <div class="promo-burst mono">AS SEEN ON TV*</div>
+    <button class="icon-btn sm promo-close" data-close="promo" title="Close">✕</button>
+    <div class="promo-hero"><div class="promo-rays" aria-hidden="true"></div><div class="promo-icon" id="promo-icon"></div></div>
+    <div class="promo-kicker"><span class="c5">CINCO</span> PRESENTS</div>
+    <h2 class="promo-name" id="promo-name">CINCO</h2>
+    <p class="promo-tag" id="promo-tag">—</p>
+    <ul class="promo-feats" id="promo-feats"></ul>
+    <div class="promo-price">
+      <div class="was mono">WAS <s id="promo-was">$∞</s></div>
+      <div class="now"><span id="promo-price">$19.95</span></div>
+      <div class="plus" id="promo-plus">plus shipping</div>
+      <div class="promo-timer mono" id="promo-timer">OFFER ENDS IN 00:09:59</div>
+    </div>
+    <div class="promo-progress" id="promo-progress" hidden><div class="pp-bar"><i id="pp-fill"></i></div><div class="pp-txt mono" id="pp-txt">Processing…</div></div>
+    <div class="btn-row promo-btns" id="promo-btns">
+      <button class="btn ghost" data-close="promo">No thanks, I like missing out</button>
+      <button class="btn primary buy" id="promo-buy">BUY NOW</button>
+    </div>
+    <div class="promo-result mono" id="promo-result" hidden></div>
+    <p class="promo-fine" id="promo-fine">—</p>
+    <p class="promo-fine tiny">*Not seen on TV. Parody. Nothing is sold, charged, shipped, or linked. CINCO is fictional. Probably.</p>
+  </div>
+</div>
+
+<!-- CINCO recall notice -->
+<div class="recall glass" id="recall" role="alertdialog" aria-hidden="true" aria-labelledby="recall-title">
+  <div class="recall-stripe"></div>
+  <div class="recall-head"><span class="c5">CINCO</span><span class="recall-k mono" id="recall-title">⚠ PRODUCT RECALL NOTICE</span></div>
+  <div class="recall-prod" id="recall-prod">--</div>
+  <p class="recall-body" id="recall-body">--</p>
+  <div class="recall-remedy" id="recall-remedy">--</div>
+  <div class="btn-row"><button class="btn ghost sm" id="recall-ok">Acknowledge</button><button class="btn ghost sm" id="recall-panic">Panic Politely</button></div>
+</div>
+
+<!-- Red alert overlay -->
+<div class="redalert" id="redalert" aria-hidden="true">
+  <div class="ra-edge"></div>
+  <div class="ra-banner"><span class="ra-k mono">CONDITION</span><span class="ra-t">RED ALERT</span><button class="btn danger sm" id="ra-stand">Stand Down</button></div>
+</div>
+
+<!-- Screen light -->
+<div class="screenlight" id="screenlight" aria-hidden="true">
+  <div class="sl-ui">
+    <div class="sl-k mono" id="sl-k">SCREEN LIGHT</div>
+    <div class="range-row"><span>☀</span><input type="range" id="sl-bright" min="0.2" max="1" step="0.05" value="1" aria-label="Screen light brightness"></div>
+    <button class="btn ghost sm" id="sl-off">Tap here to exit</button>
+  </div>
+</div>
+
+<canvas id="fx-canvas" aria-hidden="true"></canvas>
+<div class="toasts" id="toasts" aria-live="polite"></div>
+
+<script src="js/util.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/background.js"></script>
+<script src="js/sensors.js"></script>
+<script src="js/jarvis.js"></script>
+<script src="js/camera.js"></script>
+<script src="js/modules.js"></script>
+<script src="js/light.js"></script>
+<script src="js/cinco.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
