@@ -12,7 +12,8 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
-<link rel="stylesheet" href="css/style.css">
+<meta name="nv-version" content="10.0.0">
+<link rel="stylesheet" href="css/style.css?v=10.0.0">
 </head>
 <body data-theme="arc">
 
@@ -36,12 +37,24 @@
 
 <!-- Boot -->
 <div id="boot" aria-hidden="true">
+  <div class="boot-hex" aria-hidden="true"></div>
   <div class="boot-inner">
-    <div class="boot-radar"><i></i><svg class="boot-mark" viewBox="0 0 100 100"><use href="#nv-mark"/></svg></div>
+    <div class="boot-core">
+      <svg class="boot-rings" viewBox="0 0 200 200" aria-hidden="true">
+        <circle cx="100" cy="100" r="94" class="br br1" pathLength="100"/>
+        <circle cx="100" cy="100" r="84" class="br br2" pathLength="100"/>
+        <circle cx="100" cy="100" r="72" class="br br3" pathLength="100"/>
+        <g class="br-ticks" id="boot-ticks"></g>
+      </svg>
+      <div class="boot-radar"><i></i><svg class="boot-mark" viewBox="0 0 100 100"><use href="#nv-mark"/></svg></div>
+      <div class="boot-pct mono" id="boot-pct">00%</div>
+    </div>
     <div class="boot-title">NICK-VERSE <span>SCANNER</span></div>
-    <div class="boot-sub mono">CINCO SCAN-O-MATIC 9000 · FIRMWARE 9.0.0-ish</div>
+    <div class="boot-sub mono">CINCO SCAN-O-MATIC 9000 · MARK X · FIRMWARE 10.0.0</div>
+    <div class="boot-grid" id="boot-grid" aria-hidden="true"></div>
     <div class="boot-lines" id="boot-lines"></div>
     <div class="boot-bar"><i id="boot-progress"></i></div>
+    <div class="boot-welcome" id="boot-welcome"></div>
     <div class="boot-skip">tap anywhere to skip</div>
   </div>
 </div>
@@ -52,7 +65,7 @@
       <svg class="brand-mark" viewBox="0 0 100 100"><use href="#nv-mark"/></svg>
       <span class="brand-text">
         <span class="brand-name">NICK<span>-</span>VERSE</span>
-        <span class="brand-sub">SCANNER // HANDHELD SENSOR ARRAY <em>v9.0</em></span>
+        <span class="brand-sub">SCANNER // HANDHELD SENSOR ARRAY <em>v10.0</em></span>
       </span>
     </button>
     <div class="top-status">
@@ -61,6 +74,8 @@
       <div class="chip mono" id="chip-timer" hidden><i class="dot"></i><span id="chip-timer-text">00:00</span></div>
     </div>
     <nav class="top-actions">
+      <button class="icon-btn mic-btn" id="btn-voice" title="Voice command (C)" aria-pressed="false" aria-label="Voice command"><svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M8.5 21h7"/><path class="mic-x" d="M4 4l16 16"/></svg><i class="mic-ring"></i></button>
+      <button class="icon-btn" id="btn-palette" title="Command palette (Ctrl/⌘ K)" aria-label="Command palette"><svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l5 5"/></svg></button>
       <button class="icon-btn" id="btn-protocols" title="Protocols (P)"><svg viewBox="0 0 24 24"><path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6z"/><path d="M9 12l2 2 4-4"/></svg></button>
       <button class="icon-btn" id="btn-theme" title="Cycle theme (T)"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 0 0 18z" class="fill"/></svg></button>
       <button class="icon-btn" id="btn-mute" title="Sound on/off (M)" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M4 9h4l5-4v14l-5-4H4z"/><path class="snd-on" d="M16 9a4 4 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11"/><path class="snd-off" d="M16 9l5 6M21 9l-5 6"/></svg></button>
@@ -100,28 +115,27 @@
         </span>
         <span class="ad-foot"><span class="ad-cta">Tap to learn more ›</span><span class="ad-dots" id="ad-dots"></span></span>
       </button>
+      <button class="panel glass hotline-cta" id="hotline-cta" aria-label="Call the CINCO Customer Support Hotline"><span class="c5">CINCO</span><span class="hc-txt"><b>Customer Support Hotline</b><small>Lines are open. Nobody is answering.</small></span><span class="hc-ic" aria-hidden="true">☎</span></button>
     </aside>
 
     <!-- CENTER: modules -->
     <section class="col col-center" aria-label="Scanner modules">
-      <nav class="tabs glass" id="tabs" role="tablist" aria-label="Modules">
-        <button role="tab" data-tab="scan"><svg viewBox="0 0 24 24"><path d="M4 8V4h4M20 8V4h-4M4 16v4h4M20 16v4h-4"/><circle cx="12" cy="12" r="3.5"/></svg><span>Scan</span><kbd>1</kbd></button>
-        <button role="tab" data-tab="motion"><svg viewBox="0 0 24 24"><path d="M3 12h3l2-6 4 12 3-9 2 3h4"/></svg><span>Motion</span><kbd>2</kbd></button>
-        <button role="tab" data-tab="nav"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/></svg><span>Nav</span><kbd>3</kbd></button>
-        <button role="tab" data-tab="audio"><svg viewBox="0 0 24 24"><path d="M4 10v4M8 7v10M12 4v16M16 8v8M20 11v2"/></svg><span>Audio</span><kbd>4</kbd></button>
-        <button role="tab" data-tab="threat"><svg viewBox="0 0 24 24"><path d="M12 3l9.5 17h-19z"/><path d="M12 10v4.5M12 17.2v.3"/></svg><span>Threat</span><kbd>5</kbd></button>
-        <button role="tab" data-tab="light"><svg viewBox="0 0 24 24"><path d="M8 3h8v4l-2 3v11h-4V10L8 7z"/><path d="M12 13v2M8 7h8"/></svg><span>Light</span><kbd>6</kbd></button>
-        <button role="tab" data-tab="radar"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.5"/><path d="M12 12l6.4-6.4"/></svg><span>Radar</span><kbd>7</kbd></button>
-        <button role="tab" data-tab="system"><svg viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="14" rx="2"/><path d="M9.5 9.5h5v5h-5zM9 2v3M15 2v3M9 19v3M15 19v3M2 9h3M2 15h3M19 9h3M19 15h3"/></svg><span>System</span><kbd>8</kbd></button>
-        <button role="tab" data-tab="log"><svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg><span>Log</span><kbd>9</kbd></button>
-        <button role="tab" data-tab="timer"><svg viewBox="0 0 24 24"><circle cx="12" cy="14" r="7"/><path d="M12 14v-4M10 3h4M12 3v4M18 7l1.5-1.5"/></svg><span>Timer</span><kbd>0</kbd></button>
+      <nav class="toolnav glass" id="toolnav" aria-label="Tools">
+        <div class="tn-row">
+          <div class="tn-cats" id="tn-cats" role="tablist" aria-label="Tool categories"></div>
+          <div class="tn-actions">
+            <button class="tn-act" id="tn-palette" title="Command palette (Ctrl/⌘ K)"><svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l5 5"/></svg><kbd>⌘K</kbd></button>
+            <button class="tn-act" id="tn-launch" title="All tools (G)"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="6" height="6" rx="1.5"/><rect x="14" y="4" width="6" height="6" rx="1.5"/><rect x="4" y="14" width="6" height="6" rx="1.5"/><rect x="14" y="14" width="6" height="6" rx="1.5"/></svg><span>All tools</span></button>
+          </div>
+        </div>
+        <div class="tn-tools" id="tn-tools" role="tablist" aria-label="Tools in category"></div>
       </nav>
 
       <div class="modules device" id="modules">
 
         <!-- 1 SCAN -->
         <section class="panel glass module" data-mod="scan" role="tabpanel" aria-label="Optical scanner">
-          <header class="panel-head"><span class="ph-idx">OPT</span><h2>Optical Scanner</h2><span class="badge" id="cam-badge">OFFLINE</span></header>
+          <header class="panel-head"><span class="ph-idx">OPT</span><h2>Optical Scanner</h2><button class="chip-btn" data-go="ar" title="Open AR overlay">AR ›</button><span class="badge" id="cam-badge">OFFLINE</span></header>
           <div class="cam-wrap" id="cam-wrap">
             <canvas id="cam-canvas" aria-label="Camera view with HUD overlay"></canvas>
             <video id="cam-video" playsinline muted autoplay></video>
@@ -169,6 +183,225 @@
             <div class="ro"><span class="k">Feed</span><span class="v mono" id="ro-res">--</span></div>
             <div class="ro"><span class="k">QR Engine</span><span class="v mono" id="ro-qr">--</span></div>
           </div>
+        </section>
+
+
+        <!-- AR OVERLAY -->
+        <section class="panel glass module" data-mod="ar" aria-label="AR overlay">
+          <header class="panel-head"><span class="ph-idx">AR</span><h2>AR Overlay</h2><span class="badge" id="ar-badge">STANDBY</span></header>
+          <div class="cam-wrap ar-wrap"><canvas id="ar-canvas" aria-label="Augmented reality HUD"></canvas>
+            <div class="cam-start" id="ar-start">
+              <button class="engage" data-engage><span class="engage-rings"><i></i><i></i><i></i></span><span class="engage-txt">ENGAGE<br>AR HUD</span></button>
+              <div class="cam-start-note">Camera frames are processed live on this device. Nothing is uploaded, Sir.</div>
+              <button class="linkish" data-engage-sim>No camera? Use the simulated feed</button>
+            </div>
+          </div>
+          <div class="cam-controls">
+            <div class="seg" id="ar-mode" role="radiogroup" aria-label="Tracking mode"><button data-m="bright" class="on">Brightest</button><button data-m="salient">Salient</button><button data-m="motion">Motion</button></div>
+            <div class="btn-row"><button class="btn ghost" id="ar-lock" aria-pressed="false">Lock</button><button class="btn primary" id="ar-analyse">Analyse Target</button><button class="btn ghost" id="ar-ladder" aria-pressed="true">Ladder</button></div>
+          </div>
+          <div class="readouts">
+            <div class="ro"><span class="k">Target</span><span class="v mono" id="ar-tgt">--</span></div>
+            <div class="ro"><span class="k">Confidence</span><span class="v mono" id="ar-conf">--</span></div>
+            <div class="ro"><span class="k">Bearing</span><span class="v mono" id="ar-brg">--</span></div>
+            <div class="ro"><span class="k">Range (est.)</span><span class="v mono" id="ar-rng">--</span></div>
+          </div>
+          <div class="hint">Brackets track the brightest, most contrasty or moving region in view. Ranges and target IDs are playful estimates.</div>
+        </section>
+
+        <!-- COLOUR LAB -->
+        <section class="panel glass module" data-mod="color" aria-label="Colour picker and paint matcher">
+          <header class="panel-head"><span class="ph-idx">RGB</span><h2>Colour Lab</h2><span class="badge" id="col-badge">TAP TO SAMPLE</span></header>
+          <div class="cam-wrap color-wrap"><canvas id="col-canvas" aria-label="Camera view. Tap to sample a colour."></canvas>
+            <div class="cam-start" id="col-start">
+              <button class="engage" data-engage><span class="engage-rings"><i></i><i></i><i></i></span><span class="engage-txt">ENGAGE<br>COLOUR LAB</span></button>
+              <div class="cam-start-note">Camera frames are processed live on this device. Nothing is uploaded, Sir.</div>
+              <button class="linkish" data-engage-sim>No camera? Use the simulated feed</button>
+            </div>
+          </div>
+          <div class="col-result">
+            <div class="col-main">
+              <button class="col-swatch" id="col-swatch" title="Copy HEX"><span id="col-swatch-k">#------</span></button>
+              <div class="col-names">
+                <div class="col-name" id="col-name">Tap the feed, Sir</div>
+                <div class="col-match mono" id="col-match">Nearest named colour · ΔE --</div>
+                <div class="col-paint" id="col-paint">CINCO Paint Co. match: --</div>
+              </div>
+            </div>
+            <div class="col-codes">
+              <button class="ro code" data-copy="hex"><span class="k">HEX</span><span class="v mono" id="col-hex">--</span></button>
+              <button class="ro code" data-copy="rgb"><span class="k">RGB</span><span class="v mono" id="col-rgb">--</span></button>
+              <button class="ro code" data-copy="hsl"><span class="k">HSL</span><span class="v mono" id="col-hsl">--</span></button>
+              <button class="ro code" data-copy="cmyk"><span class="k">CMYK</span><span class="v mono" id="col-cmyk">--</span></button>
+            </div>
+            <div class="harmony" id="col-harmony"></div>
+            <div class="btn-row wrap"><button class="btn ghost" id="col-lock" aria-pressed="false">Lock</button><button class="btn primary" id="col-save">Save Swatch</button><button class="btn ghost" id="col-clear">Clear Saved</button></div>
+            <div class="col-saved" id="col-saved"></div>
+          </div>
+          <div class="hint">Tap anywhere on the feed to sample. Camera white balance shifts colours, so match paint in daylight. Tap any swatch to copy it.</div>
+        </section>
+
+        <!-- TEXT READER -->
+        <section class="panel glass module" data-mod="ocr" aria-label="Text reader">
+          <header class="panel-head"><span class="ph-idx">OCR</span><h2>Text Reader</h2><span class="badge" id="ocr-badge">READY</span></header>
+          <div class="cam-wrap ocr-wrap"><canvas id="ocr-canvas" aria-label="Camera view for text reading"></canvas>
+            <div class="cam-start" id="ocr-start">
+              <button class="engage" data-engage><span class="engage-rings"><i></i><i></i><i></i></span><span class="engage-txt">ENGAGE<br>READER</span></button>
+              <div class="cam-start-note">Camera frames are processed live on this device. Nothing is uploaded, Sir.</div>
+              <button class="linkish" data-engage-sim>No camera? Use the simulated feed</button>
+            </div>
+          </div>
+          <div class="btn-row wrap ocr-btns">
+            <button class="btn primary" id="ocr-read">Capture &amp; Read</button>
+            <label class="btn ghost file-btn">Import Image<input type="file" id="ocr-file" accept="image/*"></label>
+            <button class="btn ghost" id="ocr-resume" disabled>Resume</button>
+          </div>
+          <div class="ocr-engine"><span class="mono" id="ocr-engine">Engine: detecting…</span><div class="pp-bar ocr-prog" id="ocr-prog" hidden><i id="ocr-prog-fill"></i></div></div>
+          <div class="ocr-out" id="ocr-out" aria-live="polite"><span class="ocr-empty">Recognised text will appear here. Point at something printed, in good light.</span></div>
+          <div class="btn-row wrap"><button class="btn ghost sm" id="ocr-copy">Copy</button><button class="btn ghost sm" id="ocr-speak">Read Aloud</button><button class="btn ghost sm" id="ocr-clear">Clear</button></div>
+          <div class="hint">Uses the browser's built-in TextDetector where available. Otherwise it can download the Tesseract.js engine (online, first use only). Offline scanning still works; only reading text needs it.</div>
+        </section>
+
+        <!-- MEASURE -->
+        <section class="panel glass module" data-mod="measure" aria-label="Ruler and protractor">
+          <header class="panel-head"><span class="ph-idx">MSR</span><h2>Measure</h2><span class="badge" id="ms-badge">UNCALIBRATED</span></header>
+          <div class="seg ms-seg" id="ms-mode" role="radiogroup" aria-label="Measure mode"><button data-m="ruler" class="on">Ruler</button><button data-m="prot">Protractor</button></div>
+          <div id="ms-ruler">
+            <div class="ruler-wrap"><canvas id="ms-ruler-cv" aria-label="On-screen ruler. Drag the two handles to measure."></canvas></div>
+            <div class="readouts ms-reads">
+              <div class="ro"><span class="k">Length</span><span class="v mono" id="ms-len">--</span></div>
+              <div class="ro"><span class="k">Centimetres</span><span class="v mono" id="ms-cm">--</span></div>
+              <div class="ro"><span class="k">Inches</span><span class="v mono" id="ms-in">--</span></div>
+              <div class="ro"><span class="k">Scale</span><span class="v mono" id="ms-scale-v">--</span></div>
+            </div>
+            <div class="btn-row wrap"><button class="btn primary" id="ms-cal">Calibrate</button><button class="btn ghost" id="ms-reset">Reset Handles</button></div>
+            <div class="calib" id="ms-calib" hidden>
+              <div class="calib-k">Hold a bank card (85.6 mm) against the outline and slide until the edges match.</div>
+              <div class="calib-stage"><div class="card-outline" id="ms-card"><span class="chip-ic"></span><span class="mono">CINCO BANK · 85.6 × 54 mm</span></div></div>
+              <div class="range-row"><span>Size</span><input type="range" id="ms-scale" min="2" max="14" step="0.01" aria-label="Calibration scale"><span class="mono" id="ms-scale-n">--</span></div>
+              <div class="btn-row"><button class="btn ghost" id="ms-cal-cancel">Cancel</button><button class="btn primary" id="ms-cal-save">Save Calibration</button></div>
+            </div>
+          </div>
+          <div id="ms-prot" hidden>
+            <div class="prot-wrap"><canvas id="ms-prot-cv" aria-label="Protractor driven by device tilt"></canvas></div>
+            <div class="seg ms-seg" id="ms-pmode"><button data-p="edge" class="on">Edge (stand phone on its side)</button><button data-p="flat">Flat (lay phone down)</button></div>
+            <div class="readouts ms-reads">
+              <div class="ro"><span class="k">Angle</span><span class="v mono" id="ms-ang">--</span></div>
+              <div class="ro"><span class="k">Slope</span><span class="v mono" id="ms-slope">--</span></div>
+              <div class="ro"><span class="k">Reference</span><span class="v mono" id="ms-ref">0.0°</span></div>
+              <div class="ro"><span class="k">Source</span><span class="v mono" id="ms-src">--</span></div>
+            </div>
+            <div class="btn-row wrap"><button class="btn primary" id="ms-hold" aria-pressed="false">Hold</button><button class="btn ghost" id="ms-zero">Set Zero</button><button class="btn ghost" id="ms-unzero">Clear Zero</button></div>
+          </div>
+          <div class="hint" id="ms-hint">Screen sizes vary, so calibrate with a bank card for millimetre accuracy. The protractor uses device tilt (simulated on desktop).</div>
+        </section>
+
+        <!-- MOTION + NAV are above; new sensor tools -->
+        <!-- SEISMOGRAPH -->
+        <section class="panel glass module" data-mod="seismo" aria-label="Seismograph">
+          <header class="panel-head"><span class="ph-idx">SEI</span><h2>Seismograph</h2><span class="badge" id="seis-badge">WAITING</span></header>
+          <div class="seis-wrap"><canvas id="seis-cv" aria-label="Scrolling vibration trace"></canvas></div>
+          <div class="seis-read">
+            <div class="seis-mag"><span class="k">CINCO-Richter</span><span class="mono big" id="seis-mag">0.0</span></div>
+            <div class="seis-desc"><div class="seis-label" id="seis-label">Dead calm</div><div class="seis-sub mono" id="seis-sub">peak 0.0 · live 0.00 m/s²</div></div>
+          </div>
+          <div class="range-row"><span>Gain</span><input type="range" id="seis-gain" min="1" max="10" value="5" aria-label="Seismograph gain"><button class="btn ghost sm" id="seis-stomp">Stomp</button><button class="btn ghost sm" id="seis-reset">Reset</button></div>
+          <div class="list-head mono"><span>Event</span><span>Time</span><span>Mag</span></div>
+          <ul class="threat-list" id="seis-events"></ul>
+          <div class="hint">Put the phone on a table and tap nearby. The CINCO-Richter scale is a joke scale, not a real seismic measurement.</div>
+        </section>
+
+        <!-- METAL DETECTOR -->
+        <section class="panel glass module" data-mod="metal" aria-label="Metal detector">
+          <header class="panel-head"><span class="ph-idx">MAG</span><h2>Metal Detector</h2><span class="badge warn" id="det-badge">STANDBY</span></header>
+          <div class="det-top">
+            <div class="gauge-card big"><canvas id="det-gauge"></canvas></div>
+            <div class="det-side">
+              <div class="ro"><span class="k">Field |B|</span><span class="v mono" id="det-ut">-- µT</span></div>
+              <div class="ro"><span class="k">Δ Baseline</span><span class="v mono" id="det-delta">--</span></div>
+              <div class="det-bars" id="det-bars" aria-hidden="true"></div>
+              <div class="det-src mono" id="det-src">Source: --</div>
+            </div>
+          </div>
+          <div class="graph-card det-pad"><div class="graph-head"><span>Field trace</span><span class="mono gv" id="det-range">±100 µT</span></div><canvas class="graph" id="det-trace" aria-label="Magnetic field trace. In simulation, move the pointer here to hunt."></canvas></div>
+          <div class="range-row"><span>Sensitivity</span><input type="range" id="det-sens" min="1" max="10" value="6" aria-label="Detector sensitivity"></div>
+          <div class="btn-row wrap"><button class="btn primary" id="det-cal">Calibrate</button><button class="btn ghost" id="det-snd" aria-pressed="true">Beep</button><button class="btn ghost" id="det-new" hidden>New Target</button></div>
+          <div class="det-find" id="det-find" hidden></div>
+          <div class="hint" id="det-hint">Wave the top of the phone slowly near metal. Phones use a magnetometer, so steel and magnets register and gold barely does.</div>
+        </section>
+
+        <!-- HEART RATE -->
+        <section class="panel glass module" data-mod="heart" aria-label="Pulse estimate">
+          <header class="panel-head"><span class="ph-idx">PPG</span><h2>Pulse Estimator</h2><span class="badge" id="hr-badge">IDLE</span></header>
+          <div class="disclaimer" role="note"><b>⚠ ENTERTAINMENT ONLY.</b> Not a medical device. It doesn't diagnose, monitor or treat anything. If you're worried about your heart, see a real doctor, Sir.</div>
+          <div class="hr-top">
+            <div class="hr-finger"><canvas id="hr-finger" aria-label="Fingertip camera preview"></canvas><span class="hr-finger-k mono" id="hr-finger-k">NO SIGNAL</span></div>
+            <div class="hr-read">
+              <svg class="hr-heart" id="hr-heart" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7.5-4.6-9.5-9.6C1.2 8 3.4 4.5 7 4.5c2 0 3.6 1.1 5 3 1.4-1.9 3-3 5-3 3.6 0 5.8 3.5 4.5 6.9C19.5 16.4 12 21 12 21z"/></svg>
+              <div class="hr-bpm"><span class="mono" id="hr-bpm">--</span><small>BPM (est.)</small></div>
+              <div class="hr-state" id="hr-state">Press Start, then cover the rear camera and torch with a fingertip.</div>
+              <div class="meter hr-q"><i id="hr-q"></i></div><div class="stat-note" id="hr-qk">Signal quality</div>
+            </div>
+          </div>
+          <div class="graph-card"><div class="graph-head"><span>Pulse wave (red channel)</span><span class="mono gv" id="hr-time">--</span></div><canvas class="graph" id="hr-wave"></canvas></div>
+          <div class="btn-row wrap"><button class="btn primary" id="hr-start">Start</button><button class="btn ghost" id="hr-demo">Demo Signal</button></div>
+          <div class="hint">Works best on phones with a rear torch (Chrome on Android). Keep still and press lightly. Pressing hard blocks the blood flow and the reading.</div>
+        </section>
+
+        <!-- WEATHER & SKY -->
+        <section class="panel glass module" data-mod="weather" aria-label="Weather and sky">
+          <header class="panel-head"><span class="ph-idx">SKY</span><h2>Weather &amp; Sky</h2><span class="badge" id="wx-badge">STANDBY</span></header>
+          <div class="wx-loc">
+            <div class="wx-place"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6-5.6-6-11a6 6 0 0 1 12 0c0 5.4-6 11-6 11z"/><circle cx="12" cy="10" r="2.2"/></svg><span id="wx-place">--</span><small class="mono" id="wx-updated"></small></div>
+            <div class="wx-loc-btns">
+              <button class="btn ghost sm" id="wx-geo">Use My Location</button>
+              <button class="btn ghost sm" id="wx-units" title="Toggle units">°C / °F</button>
+              <button class="btn ghost sm" id="wx-refresh" title="Refresh">↻</button>
+            </div>
+            <form class="wx-search" id="wx-search" autocomplete="off"><input type="text" id="wx-q" placeholder="Search a city…" aria-label="Search a city" maxlength="60"><button class="btn primary sm" type="submit">Go</button></form>
+            <ul class="wx-results" id="wx-results" hidden></ul>
+          </div>
+          <div class="wx-now">
+            <div class="wx-icon" id="wx-icon" aria-hidden="true"></div>
+            <div class="wx-temp"><span class="mono" id="wx-temp">--°</span><div class="wx-desc" id="wx-desc">Awaiting atmospheric data…</div><div class="wx-quip" id="wx-quip"></div></div>
+            <div class="wx-meta" id="wx-meta"></div>
+          </div>
+          <div class="graph-card"><div class="graph-head"><span>Next 24 hours</span><span class="legend"><i class="lx"></i>TEMP<i class="lz wx-rain"></i>RAIN %</span></div><canvas class="graph tall" id="wx-hourly" aria-label="Hourly temperature and rain chance"></canvas></div>
+          <div class="wx-sun graph-card"><div class="graph-head"><span>Sun</span><span class="mono gv" id="wx-daylen">--</span></div><canvas class="graph" id="wx-sunarc" aria-label="Sunrise and sunset arc"></canvas></div>
+          <div class="sky-card">
+            <div class="sky-dome"><canvas id="sky-dome" aria-label="Sky dome of the current sky"></canvas></div>
+            <div class="sky-side">
+              <div class="moon-card"><canvas id="moon-cv" aria-label="Moon phase"></canvas><div><div class="moon-name" id="moon-name">--</div><div class="mono moon-sub" id="moon-sub">--</div></div></div>
+              <div class="sub-title">Above the horizon</div>
+              <ul class="sky-list" id="sky-list"></ul>
+            </div>
+          </div>
+          <div class="hint">Weather from Open-Meteo (free, no key). The last result is cached for offline use. Sky positions are computed on your device and are approximate. Faint background stars are decorative.</div>
+        </section>
+
+        <!-- PERIMETER GUARD -->
+        <section class="panel glass module" data-mod="guard" aria-label="Perimeter guard">
+          <header class="panel-head"><span class="ph-idx">GRD</span><h2>Perimeter Guard</h2><span class="badge" id="guard-badge">DISARMED</span></header>
+          <div class="guard-top">
+            <div class="guard-gauge"><canvas id="guard-cv" aria-label="Perimeter status"></canvas></div>
+            <div class="guard-side">
+              <div class="guard-state" id="guard-state">DISARMED</div>
+              <div class="guard-desc" id="guard-desc">Arm the guard, put the phone down and step away. If it moves, or the camera sees motion, I shall make a scene.</div>
+              <div class="threat-factors">
+                <div class="tf"><span>Motion</span><i><b id="guard-m"></b></i><span id="guard-mv">00</span></div>
+                <div class="tf"><span>Camera</span><i><b id="guard-c"></b></i><span id="guard-cv-v">--</span></div>
+              </div>
+              <label class="switch"><input type="checkbox" id="guard-usecam"><i></i>Watch with the camera too</label>
+              <div class="range-row"><span>Sensitivity</span><input type="range" id="guard-sens" min="1" max="10" value="6" aria-label="Guard sensitivity"></div>
+            </div>
+          </div>
+          <div class="btn-row wrap guard-btns">
+            <button class="btn primary big-btn" id="guard-arm">Arm Perimeter</button>
+            <button class="hold-btn" id="guard-hold" hidden aria-label="Hold to disarm"><svg viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="44" class="hb-bg"/><circle cx="50" cy="50" r="44" class="hb-fg" pathLength="100"/></svg><span>HOLD TO<br>DISARM</span></button>
+          </div>
+          <div class="list-head mono"><span>Event</span><span>Time</span><span>Source</span></div>
+          <ul class="threat-list" id="guard-events"></ul>
+          <div class="hint">No PIN needed: hold the disarm button for 1.5 seconds. The alarm is loud, so don't arm it anywhere you'd need to explain yourself.</div>
         </section>
 
         <!-- 2 MOTION -->
@@ -336,6 +569,16 @@
           <div class="list-head mono"><span>#</span><span>Split</span><span>Total</span></div>
           <ol class="lap-list" id="tm-marks"><li class="empty">No marks yet, Sir.</li></ol>
         </section>
+
+        <!-- ACHIEVEMENTS -->
+        <section class="panel glass module" data-mod="badges" aria-label="Achievements">
+          <header class="panel-head"><span class="ph-idx">ACH</span><h2>Achievements</h2><span class="ph-sub mono" id="badge-count">0 / 0</span></header>
+          <div class="badge-prog"><div class="meter"><i id="badge-bar"></i></div><span class="mono" id="badge-pct">0%</span></div>
+          <div class="badge-grid" id="badge-grid"></div>
+          <div class="btn-row"><button class="btn ghost sm" id="badge-reset">Reset Progress</button></div>
+          <div class="hint">Stored only in this browser. CINCO awards no prizes, only a warm glow and mild bragging rights.</div>
+        </section>
+
       </div>
     </section>
 
@@ -366,6 +609,8 @@
     </aside>
   </main>
 
+  <nav class="dock" id="dock" aria-label="Favourite tools"></nav>
+
   <footer class="footer">
     <div class="cinco-stamp">
       <div class="cinco-logo"><span class="c5">CINCO</span><span class="corp">Corporation</span></div>
@@ -376,7 +621,7 @@
       <i></i><span>Model: CINCO Nick-Verse Scan-O-Matic 9000</span>
       <i></i><span class="fine">Warranty void if device is pointed at anything, including itself. Scan results are not legally binding in this or any adjacent dimension.</span>
     </div>
-    <div class="foot-meta mono"><span>NICK-VERSE © Nick</span><i></i><a href="https://mandeerinfinity.github.io/nickverse-watch/" class="foot-link">Companion: NICK-VERSE Watch</a><i></i><span class="kbd-hint">Press <kbd>?</kbd> for shortcuts</span></div>
+    <div class="foot-meta mono"><span>NICK-VERSE © Nick · v10.0</span><i></i><a href="https://mandeerinfinity.github.io/nickverse-watch/" class="foot-link">Companion: NICK-VERSE Watch</a><i></i><span class="kbd-hint">Press <kbd>?</kbd> for shortcuts</span></div>
   </footer>
 </div>
 
@@ -397,7 +642,19 @@
     <label class="switch"><input type="checkbox" id="set-speak"><i></i>JARVIS speaks aloud</label>
     <label class="switch"><input type="checkbox" id="set-commentary"><i></i>JARVIS auto-commentary</label>
     <select id="set-voice" aria-label="JARVIS voice"></select>
-    <div class="range-row"><span>Volume</span><input type="range" id="set-volume" min="0" max="1" step="0.05"></div>
+  </div>
+  <div class="set-group">
+    <h3>Sound Design</h3>
+    <div class="range-row"><span>Master</span><input type="range" id="set-volume" min="0" max="1" step="0.05" aria-label="Master volume"><span class="mono" id="set-volume-v">70</span></div>
+    <div class="range-row"><span>Effects</span><input type="range" id="set-sfxlevel" min="0" max="1" step="0.05" aria-label="Effects level"><span class="mono" id="set-sfxlevel-v">90</span></div>
+    <div class="range-row"><span>Music &amp; alarms</span><input type="range" id="set-musiclevel" min="0" max="1" step="0.05" aria-label="Music and alarm level"><span class="mono" id="set-musiclevel-v">70</span></div>
+    <label class="switch"><input type="checkbox" id="set-hum"><i></i>Ambient reactor hum</label>
+    <button class="btn ghost full" id="set-soundtest">Test sound</button>
+  </div>
+  <div class="set-group">
+    <h3>Accessibility</h3>
+    <label class="switch"><input type="checkbox" id="set-reducemotion"><i></i>Reduce motion</label>
+    <p class="hint left" id="rm-note">Your system motion preference is respected automatically.</p>
   </div>
   <div class="set-group">
     <h3>Sensors</h3>
@@ -430,6 +687,9 @@
       <button class="proto danger" data-proto="redalert"><b>▲</b><span class="pn">Red Alert</span><span class="pd">Klaxons and very serious faces.</span></button>
       <button class="proto" data-proto="diagnostics"><b>⌬</b><span class="pn">Diagnostics</span><span class="pd">Full self-test with running commentary.</span></button>
       <button class="proto" data-proto="briefing"><b>◉</b><span class="pn">Briefing</span><span class="pd">JARVIS reads you the situation.</span></button>
+      <button class="proto" data-proto="guard"><b>⛨</b><span class="pn">Perimeter</span><span class="pd">Arm the guard. Touch nothing.</span></button>
+      <button class="proto" data-proto="hotline"><b>☎</b><span class="pn">Call CINCO</span><span class="pd">Customer support. Bring snacks.</span></button>
+      <button class="proto" data-proto="voice"><b>◍</b><span class="pn">Voice</span><span class="pd">Speak, and I shall obey. Mostly.</span></button>
     </div>
     <p class="hint">Rumour has it there's a secret executive protocol. CINCO denies everything.</p>
   </div>
@@ -440,7 +700,12 @@
   <div class="modal-card glass">
     <header class="panel-head"><span class="ph-idx">KB</span><h2>Keyboard Shortcuts</h2><button class="icon-btn sm" data-close="help">✕</button></header>
     <div class="kb-grid">
-      <div><kbd>1</kbd>–<kbd>0</kbd><span>Switch module</span></div>
+      <div><kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>K</kbd><span>Command palette</span></div>
+      <div><kbd>G</kbd><span>Tool launcher</span></div>
+      <div><kbd>[</kbd> <kbd>]</kbd><span>Previous / next tool</span></div>
+      <div><kbd>C</kbd><span>Voice command</span></div>
+      <div><kbd>H</kbd><span>CINCO hotline</span></div>
+      <div><kbd>1</kbd>–<kbd>0</kbd><span>Classic modules</span></div>
       <div><kbd>Space</kbd><span>Scan / primary action</span></div>
       <div><kbd>Q</kbd><span>QR mode</span></div>
       <div><kbd>V</kbd><span>Cycle camera filter</span></div>
@@ -519,18 +784,79 @@
   </div>
 </div>
 
+<!-- Tool launcher -->
+<div class="modal launcher" id="launcher" aria-hidden="true" role="dialog" aria-label="Tool launcher">
+  <div class="launch-card glass">
+    <header class="panel-head"><span class="ph-idx">NAV</span><h2>Tool Launcher</h2><button class="icon-btn sm" data-close="launcher" title="Close">✕</button></header>
+    <div class="launch-search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l5 5"/></svg><input type="text" id="launch-q" placeholder="Find a tool…" aria-label="Find a tool"></div>
+    <div class="launch-grid" id="launch-grid"></div>
+    <p class="hint">Tap ☆ to pin up to 4 favourites to your dock.</p>
+  </div>
+</div>
+
+<!-- Command palette -->
+<div class="modal palette" id="palette" aria-hidden="true" role="dialog" aria-label="Command palette">
+  <div class="pal-card glass">
+    <div class="pal-input"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l5 5"/></svg><input type="text" id="pal-q" placeholder="Jump to a tool, protocol or action…" aria-label="Command" autocomplete="off" role="combobox" aria-controls="pal-list" aria-expanded="true"><kbd>Esc</kbd></div>
+    <ul class="pal-list" id="pal-list" role="listbox"></ul>
+    <div class="pal-foot mono"><span>↑↓ navigate</span><span>↵ run</span><span>Ctrl/⌘ K toggle</span></div>
+  </div>
+</div>
+
+<!-- CINCO Customer Support Hotline -->
+<div class="modal hotline" id="hotline" aria-hidden="true" role="dialog" aria-labelledby="hot-title">
+  <div class="hot-card glass">
+    <button class="icon-btn sm promo-close" data-close="hotline" title="Hang up">✕</button>
+    <div class="hot-head"><span class="c5">CINCO</span><div><h2 id="hot-title">Customer Support Hotline</h2><div class="hot-sub mono">1-800-CINCO-NO · <span id="hot-clock">00:00</span> on hold</div></div></div>
+    <div class="hot-lcd" id="hot-lcd" aria-live="polite"></div>
+    <div class="hot-queue">
+      <div class="hq-k mono">YOUR POSITION IN THE QUEUE</div>
+      <div class="hq-n" id="hot-queue">7</div>
+      <div class="hq-msg" id="hot-msg">Your call is important to us. Relatively speaking.</div>
+    </div>
+    <div class="hot-viz"><canvas id="hot-viz" aria-label="Hold music visualiser"></canvas><div class="hot-now mono"><span class="eq-dot"></span>NOW PLAYING: <span id="hot-track">Gary's Theme (Smooth Hold Mix)</span></div></div>
+    <div class="hot-pad" id="hot-pad" role="group" aria-label="Phone keypad"></div>
+    <div class="btn-row"><button class="btn danger" id="hot-hangup">Hang Up</button></div>
+    <p class="promo-fine tiny">Parody. No number is dialled, nothing is recorded and nobody is coming. Calls may be monitored for comedy purposes.</p>
+  </div>
+</div>
+
+<!-- Perimeter guard alarm -->
+<div class="guard-alarm" id="guard-alarm" aria-hidden="true" role="alertdialog" aria-labelledby="ga-t">
+  <div class="ga-edge"></div>
+  <div class="ga-inner">
+    <div class="ga-k mono">⚠ PERIMETER BREACH</div>
+    <div class="ga-t" id="ga-t">INTRUDER DETECTED</div>
+    <div class="ga-src mono" id="ga-src">Source: motion</div>
+    <button class="hold-btn big" id="ga-hold" aria-label="Hold to disarm"><svg viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="44" class="hb-bg"/><circle cx="50" cy="50" r="44" class="hb-fg" pathLength="100"/></svg><span>HOLD TO<br>DISARM</span></button>
+    <div class="ga-hint">Press and hold for 1.5 seconds</div>
+  </div>
+</div>
+
+<!-- Voice pill -->
+<div class="voice-pill" id="voice-pill" aria-live="polite" hidden><i class="vp-bars"><b></b><b></b><b></b><b></b></i><span id="voice-text">Listening…</span></div>
+<!-- Update pill -->
+<div class="update-pill glass" id="update-pill" hidden><span>✦ Scanner updated to v10</span><button class="btn primary sm" id="update-reload">Reload</button></div>
+
 <canvas id="fx-canvas" aria-hidden="true"></canvas>
 <div class="toasts" id="toasts" aria-live="polite"></div>
 
-<script src="js/util.js"></script>
-<script src="js/audio.js"></script>
-<script src="js/background.js"></script>
-<script src="js/sensors.js"></script>
-<script src="js/jarvis.js"></script>
-<script src="js/camera.js"></script>
-<script src="js/modules.js"></script>
-<script src="js/light.js"></script>
-<script src="js/cinco.js"></script>
-<script src="js/app.js"></script>
+<script src="js/util.js?v=10.0.0"></script>
+<script src="js/audio.js?v=10.0.0"></script>
+<script src="js/background.js?v=10.0.0"></script>
+<script src="js/sensors.js?v=10.0.0"></script>
+<script src="js/jarvis.js?v=10.0.0"></script>
+<script src="js/camera.js?v=10.0.0"></script>
+<script src="js/modules.js?v=10.0.0"></script>
+<script src="js/light.js?v=10.0.0"></script>
+<script src="js/cinco.js?v=10.0.0"></script>
+<script src="js/optics.js?v=10.0.0"></script>
+<script src="js/detect.js?v=10.0.0"></script>
+<script src="js/sky.js?v=10.0.0"></script>
+<script src="js/hotline.js?v=10.0.0"></script>
+<script src="js/badges.js?v=10.0.0"></script>
+<script src="js/voice.js?v=10.0.0"></script>
+<script src="js/tools.js?v=10.0.0"></script>
+<script src="js/app.js?v=10.0.0"></script>
 </body>
 </html>

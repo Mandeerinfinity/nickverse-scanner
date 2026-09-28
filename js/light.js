@@ -76,7 +76,7 @@
       });
     });
     at(t + 50, () => { renderMorse(text, 999); LI.morse = false; NV.audio.beep(false); lampSet(LI.on); $('#morse-lamp').classList.remove('on'); NV.text('#morse-go', 'Transmit'); setBadge(); NV.toast('Transmission complete. Nobody replied. Typical.'); });
-    NV.audio.unlock();
+    NV.audio.unlock(); NV.award('morse');
     if (!LI.on) NV.toast('Tip: switch on the flashlight first to transmit with the torch or screen.', 3000);
   };
 

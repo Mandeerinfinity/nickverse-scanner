@@ -3,7 +3,7 @@
   'use strict';
   const NV = window.NV;
   const bg = (NV.bg = {});
-  let canvas, ctx, W = 0, H = 0, dpr = 1, parts = [], sparks = [], bloomP = null, bloomS = null, bloomV = -1;
+  let canvas, ctx, W = 0, H = 0, dpr = 1, quality = 1, parts = [], sparks = [], bloomP = null, bloomS = null, bloomV = -1;
   function makeBloom(hex) {
     const cv = document.createElement('canvas'); cv.width = cv.height = 32; const x = cv.getContext('2d');
     const g = x.createRadialGradient(16, 16, 0, 16, 16, 16); g.addColorStop(0, NV.rgba(hex, 0.6)); g.addColorStop(1, NV.rgba(hex, 0));
@@ -11,7 +11,7 @@
   }
 
   function seed() {
-    const area = W * H; const n = Math.round(NV.clamp(area / 9000, 40, 170));
+    const area = W * H; const n = Math.round(NV.clamp(area / 9000, 40, 170) * (NV.reducedMotion ? 0.45 : quality < 1 ? 0.55 : 1));
     parts = [];
     for (let i = 0; i < n; i++) {
       const z = Math.random(); // 0 far .. 1 near
@@ -28,7 +28,10 @@
   bg.init = function (el) {
     canvas = el; ctx = canvas.getContext('2d');
     resize(); window.addEventListener('resize', resize);
+    NV.onSetting((k) => { if (k === 'reducemotion') seed(); });
   };
+  bg.setQuality = function (q) { q = q < 1 ? 0.5 : 1; if (q === quality) return; quality = q; if (canvas) seed(); };
+  bg.reseed = function () { if (canvas) seed(); };
   bg.burst = function (x, y, n = 24) {
     for (let i = 0; i < n; i++) { const a = Math.random() * Math.PI * 2, s = 0.6 + Math.random() * 2.6; sparks.push({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, life: 1 }); }
   };
@@ -39,7 +42,7 @@
     x.setTransform(dpr, 0, 0, dpr, 0, 0);
     x.clearRect(0, 0, W, H);
     if (!NV.settings.particles) return;
-    const speed = document.body.classList.contains('stealth-mode') ? 0.3 : document.body.classList.contains('red-alert') ? 2.2 : 1;
+    const speed = (NV.reducedMotion ? 0.35 : 1) * (document.body.classList.contains('stealth-mode') ? 0.3 : document.body.classList.contains('red-alert') ? 2.2 : 1);
     const k = Math.min(dt, 50) / 16.67 * speed;
     const ox = (NV.parallax ? NV.parallax.x : 0) * 26, oy = (NV.parallax ? NV.parallax.y : 0) * 26;
     const pr = NV.hexToRgb(c.primary), sr = NV.hexToRgb(c.secondary);
@@ -54,7 +57,7 @@
     }
     // constellation lines between near particles (foreground only)
     x.lineWidth = 0.6;
-    const near = parts.filter((p) => p.z > 0.55);
+    const near = quality < 1 || NV.reducedMotion ? [] : parts.filter((p) => p.z > 0.55); /* skip O(n²) lines when throttled */
     for (let i = 0; i < near.length; i++) for (let j = i + 1; j < near.length; j++) {
       const a = near[i], b = near[j], dx = a.px - b.px, dy = a.py - b.py, d2 = dx * dx + dy * dy;
       if (d2 < 16000) { const al = (1 - d2 / 16000) * 0.16; x.strokeStyle = `rgba(${pr[0]},${pr[1]},${pr[2]},${al})`; x.beginPath(); x.moveTo(a.px, a.py); x.lineTo(b.px, b.py); x.stroke(); }

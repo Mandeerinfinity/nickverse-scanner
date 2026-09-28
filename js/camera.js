@@ -89,7 +89,7 @@
       C.live = true; C.sim = false; C.frozen = false;
       let caps = {}; try { caps = (C.track.getCapabilities && C.track.getCapabilities()) || {}; } catch (e) { caps = {}; }
       C.hwZoom = caps.zoom && caps.zoom.max > caps.zoom.min ? caps.zoom : null; C.torchCap = !!caps.torch;
-      $('#cam-start').classList.add('gone'); setBadge('LIVE', 'live'); NV.audio.powerUp(); NV.haptic(30);
+      NV.$$('.cam-start').forEach((e) => e.classList.add('gone')); setBadge('LIVE', 'live'); NV.audio.powerUp(); NV.haptic(30);
       applyZoom(); updateReadouts(); NV.emitCaps && NV.emitCaps();
       return true;
     } catch (e) {
@@ -97,11 +97,12 @@
       C.startSim(); return false;
     }
   };
-  C.startSim = () => { stopTracks(); C.sim = true; C.frozen = false; $('#cam-start').classList.add('gone'); setBadge('SIM FEED', 'warn'); NV.audio.powerUp(); updateReadouts(); NV.emitCaps && NV.emitCaps(); };
+  C.startSim = () => { stopTracks(); C.sim = true; C.frozen = false; NV.$$('.cam-start').forEach((e) => e.classList.add('gone')); setBadge('SIM FEED', 'warn'); NV.audio.powerUp(); updateReadouts(); NV.emitCaps && NV.emitCaps(); };
   C.active = () => C.live || C.sim;
   C.flip = () => { if (!C.live) { NV.toast('Camera switching requires a live camera.'); return; } C.start(C.facing === 'environment' ? 'user' : 'environment'); NV.audio.whoosh(); };
   C.setTorch = async (on) => { if (!C.live || !C.torchCap || !C.track) return false; try { await C.track.applyConstraints({ advanced: [{ torch: !!on }] }); return true; } catch (e) { return false; } };
-  C.setFilter = (f) => { C.filter = f; NV.$$('#cam-filters button').forEach((b) => b.classList.toggle('on', b.dataset.filter === f)); NV.audio.click(1.1); };
+  const usedFilters = new Set(NV.store.get('filtersUsed', []));
+  C.setFilter = (f) => { C.filter = f; NV.$$('#cam-filters button').forEach((b) => b.classList.toggle('on', b.dataset.filter === f)); NV.audio.click(1.1); usedFilters.add(f); NV.store.set('filtersUsed', [...usedFilters]); if (usedFilters.size >= 4) NV.award('filters'); };
   C.cycleFilter = () => C.setFilter(FILTERS[(FILTERS.indexOf(C.filter) + 1) % FILTERS.length]);
   function applyZoom() {
     NV.text('#cam-zoom-v', C.zoom.toFixed(1) + '×' + (C.hwZoom ? ' HW' : ''));
@@ -170,7 +171,7 @@
 
   C.frame = function (t, display = true) {
     if (!C.active()) return;
-    if (C.sim && !C.frozen) drawSim(t);
+    if (C.sim && (!C.frozen || !display)) drawSim(t);
     const si = sourceInfo(); if (!si) return;
     if (C.live) C.res = `${si.sw}×${si.sh}`;
     if (!display) { if (!C.frozen && frameN++ % 3 === 0) processFrame(t, si.src, si.sw, si.sh, 320, 240); return; }
@@ -326,6 +327,7 @@
       renderReport(a);
       const th = thumb();
       NV.log && NV.log.add({ type: 'scan', title: a.fake.object, detail: `${a.name} (${a.hex.toUpperCase()}) · brightness ${Math.round(a.bright * 100)}% · ${FNAME[C.filter]} · ${C.sim ? 'simulated feed' : 'live camera'}. ${a.fake.verdict}`, color: a.hex, thumb: th, bright: a.bright, filter: C.filter });
+      NV.award('first-scan'); NV.emit('scan', a);
       NV.jarvis.speak(`Scan complete. Dominant colour: ${a.name.toLowerCase()}, brightness ${Math.round(a.bright * 100)} percent. Entertainment analysis suggests: ${a.fake.object}. ${a.fake.verdict}`, { tag: 'SCAN' });
       if (a.bright < 0.12) setTimeout(() => NV.jarvis.auto('dark', 1000), 5000);
       const rep = $('#scan-report'); if (innerWidth < 900) setTimeout(() => rep.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 200);
@@ -344,6 +346,17 @@
   }
   C.snapshotThumb = thumb;
   C.colorName = colorName;
+  C.rgb2hsl = rgb2hsl;
+  C.source = sourceInfo;
+  C.crop = crop;
+  C.mirrored = () => C.live && C.facing === 'user';
+  // Draw the current feed (cover-cropped, mirrored for selfie cam) into any 2D context. Returns false if no feed.
+  C.drawFeed = (x, w, h, zoom = 1) => {
+    const si = sourceInfo(); if (!si) return false;
+    const [sx, sy, cw, ch] = crop(si.sw, si.sh, w, h, zoom);
+    x.save(); if (C.mirrored()) { x.translate(w, 0); x.scale(-1, 1); }
+    x.drawImage(si.src, sx, sy, cw, ch, 0, 0, w, h); x.restore(); return true;
+  };
 
   C.init = function () {
     video = $('#cam-video'); cv = $('#cam-canvas');

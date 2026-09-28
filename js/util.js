@@ -2,6 +2,7 @@
 (function () {
   'use strict';
   const NV = (window.NV = window.NV || {});
+  NV.VERSION = '10.0.0';
 
   NV.THEMES = [
     { id: 'arc',     name: 'Arc Reactor',     primary: '#4de8ff', secondary: '#bff8ff', tertiary: '#ffb547', bg: '#01060b', bg1: '#05263a', swatch: 'radial-gradient(circle at 35% 35%,#e8feff,#4de8ff 45%,#05263a)' },
@@ -21,7 +22,8 @@
     del(key) { try { localStorage.removeItem(PREFIX + key); } catch (e) { /* ignore */ } }
   };
 
-  NV.DEFAULTS = { theme: 'arc', particles: true, scanlines: true, parallax: true, uisound: true, haptics: true, speak: true, commentary: true, volume: 0.7, voice: '', forcesim: false, wakelock: false, micoffset: 94, ads: true, recalls: true, secret: false };
+  NV.DEFAULTS = { theme: 'arc', particles: true, scanlines: true, parallax: true, uisound: true, haptics: true, speak: true, commentary: true, volume: 0.7, voice: '', forcesim: false, wakelock: false, micoffset: 94, ads: true, recalls: true, secret: false,
+    sfxlevel: 0.9, musiclevel: 0.7, hum: false, reducemotion: false, units: /^en-US|^en-LR|^my/i.test(navigator.language || '') ? 'f' : 'c' };
   NV.settings = Object.assign({}, NV.DEFAULTS, NV.store.get('settings', {}));
   const listeners = [];
   NV.onSetting = (fn) => listeners.push(fn);
@@ -59,9 +61,10 @@
   NV.esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   NV.text = (sel, v) => { const e = typeof sel === 'string' ? NV.$(sel) : sel; if (e && e.textContent !== v) e.textContent = v; };
 
-  NV.toast = (msg, ms = 3800) => {
+  NV.toast = (msg, ms = 3800, opts = {}) => {
     const box = NV.$('#toasts'); if (!box) return;
-    const t = NV.el('div', { class: 'toast' }); t.textContent = msg; box.appendChild(t);
+    const t = NV.el('div', { class: 'toast' + (opts.cls ? ' ' + opts.cls : '') });
+    if (opts.html) t.innerHTML = opts.html; else t.textContent = msg; box.appendChild(t);
     while (box.children.length > 4) box.firstChild.remove();
     setTimeout(() => { t.classList.add('out'); setTimeout(() => t.remove(), 400); }, ms);
   };
@@ -77,7 +80,16 @@
   };
   NV.setRing = (el, frac) => { if (el) el.style.strokeDasharray = `${NV.clamp(frac, 0, 1) * 100} 100`; };
   NV.dpr = () => Math.min(window.devicePixelRatio || 1, 2.5);
-  NV.reducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  NV.osReducedMotion = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  NV.reducedMotion = NV.osReducedMotion || !!NV.settings.reducemotion;
+  NV.onSetting((k, v) => { if (k === 'reducemotion') { NV.reducedMotion = NV.osReducedMotion || !!v; document.documentElement.classList.toggle('reduce-motion', NV.reducedMotion); } });
+
+  // Tiny event bus + achievement helper (safe to call before badges.js loads)
+  const bus = {};
+  NV.on = (ev, fn) => (bus[ev] = bus[ev] || []).push(fn);
+  NV.emit = (ev, d) => (bus[ev] || []).forEach((fn) => { try { fn(d); } catch (e) { /* keep going */ } });
+  NV.award = (id) => { if (NV.badges) NV.badges.unlock(id); };
+  NV.copy = async (text, label = 'Copied') => { try { await navigator.clipboard.writeText(text); NV.toast(label + ': ' + text, 2200); return true; } catch (e) { NV.toast('Clipboard unavailable here. Long-press to copy, Sir.'); return false; } };
 
   // High-DPI canvas helper with cached CSS size (ResizeObserver) to avoid per-frame layout reads.
   const ro = window.ResizeObserver ? new ResizeObserver((entries) => { for (const e of entries) { const r = e.contentRect; e.target._cw = r.width; e.target._ch = r.height; } }) : null;

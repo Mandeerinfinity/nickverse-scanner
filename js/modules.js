@@ -70,7 +70,7 @@
     NV.text('#shake-n', String(S.shakes));
     NV.text('#shake-s', NV.pick(['Shake registered!', 'Whoa there.', 'Magnificent wobble.', 'Seismic event logged.', 'The gyros are dizzy.']));
     const card = $('#shake-card'); card.classList.remove('hit'); void card.offsetWidth; card.classList.add('hit'); shakeFlashT = performance.now();
-    NV.audio.shake(); NV.haptic([60, 40, 60]);
+    NV.audio.shake(); NV.haptic([60, 40, 60]); if (S.shakes >= 5) NV.award('shake');
     const r = card.getBoundingClientRect(); if (r.width) NV.bg.burst(r.left + r.width / 2, r.top + r.height / 2, 30);
     NV.jarvis.auto('shake', 8000);
   };
@@ -144,7 +144,7 @@
     vial(x, hx - vh / 2, hy, vh, hh, NV.clamp(-b, -20, 20) / 20, col, false);
     NV.text('#lvl-read', `${b.toFixed(1)}° / ${g.toFixed(1)}°`);
     NV.text('#lvl-state', lvl ? 'LEVEL ✓' : tilt < 5 ? 'NEARLY' : 'TILTED');
-    if (lvl && !NA.wasLevel) { NV.audio.level(); NV.haptic(25); NV.jarvis.auto('level', 20000); }
+    if (lvl && !NA.wasLevel) { NV.audio.level(); NV.haptic(25); NV.jarvis.auto('level', 20000); if (S.orientMode === 'live') NV.award('level'); }
     NA.wasLevel = lvl;
   }
   function bubble(x, bx, by, br, col) { const g = x.createRadialGradient(bx - br * 0.35, by - br * 0.35, br * 0.1, bx, by, br); g.addColorStop(0, '#fff'); g.addColorStop(0.35, NV.rgba(col, 0.9)); g.addColorStop(1, NV.rgba(col, 0.25)); x.fillStyle = g; x.shadowColor = col; x.shadowBlur = 18; x.beginPath(); x.arc(bx, by, br, 0, TAU); x.fill(); x.shadowBlur = 0; }
@@ -259,7 +259,7 @@
   // ======================= THREAT =======================
   const LEVELS = [[20, 'NOMINAL', '#57ffa8', 'No credible threats. Several incredible ones.'], [40, 'GUARDED', '#9fe8ff', 'Mild suspicion. Keep one eyebrow raised.'], [60, 'ELEVATED', '#ffb547', 'Something is afoot. Possibly a foot.'], [80, 'HIGH', '#ff7a3d', 'Considerable peril. Snacks should be secured.'], [101, 'RED', '#ff2a3d', 'Maximum drama. Assume a heroic stance.']];
   const T = (NV.threat = { value: 8, name: 'NOMINAL', col: '#57ffa8', red: false, f: { noise: 0, motion: 0, dark: 0, anomaly: 32 }, assessing: 0 });
-  const POOL = [['Unattended sock', 0], ['Suspicious crumb trail', 1], ['Cat, plotting', 2], ['Rogue Lego brick (floor)', 3], ['Houseplant, judging you', 1], ['Low-flying moth', 1], ['Wi-Fi dead zone', 2], ['Pending software update', 2], ['Tuesday', 1], ['Unread group chat (47)', 2], ['Squeaky floorboard', 0], ['Neighbour\u2019s leaf blower', 2], ['Plot hole, minor', 1], ['Last slice of pizza (contested)', 3], ['Spoiler, incoming', 3], ['Dust bunny collective', 0], ['Charger cable 4 cm too short', 2]];
+  const POOL = [['Unattended sock', 0], ['Suspicious crumb trail', 1], ['Cat, plotting', 2], ['Rogue Lego brick (floor)', 3], ['Houseplant, judging you', 1], ['Low-flying moth', 1], ['Wi-Fi dead zone', 2], ['Pending software update', 2], ['Tuesday', 1], ['Unread group chat (47)', 2], ['Squeaky floorboard', 0], ['Neighbour\u2019s leaf blower', 2], ['Plot hole, minor', 1], ['Last slice of pizza (contested)', 3], ['Plot twist, incoming', 3], ['Dust bunny collective', 0], ['Charger cable 4 cm too short', 2]];
   let tList = [], lastList = 0, lastT = 0, redTimer = null;
   function levelOf(v) { return LEVELS.find((l) => v < l[0]); }
   T.tick = (t) => {
@@ -281,7 +281,7 @@
       NV.text('#threat-level', T.name); $('#threat-level').style.setProperty('--tc', T.col); NV.text('#threat-desc', T.desc);
       $('#threat-factors').innerHTML = [['Acoustic', f.noise], ['Kinetic', f.motion], ['Darkness', f.dark], ['Anomalies', f.anomaly]].map(([k, v]) => `<div class="tf"><span>${k}</span><i><b style="width:${v.toFixed(0)}%"></b></i><span>${NV.pad(v)}</span></div>`).join('');
     }
-    NV.$('[data-tab="threat"]').classList.toggle('alert-dot', T.value >= 60);
+    NV.$$('[data-tool="threat"]').forEach((b) => b.classList.toggle('alert-dot', T.value >= 60));
     if (t - lastList > 5000 || !tList.length) { lastList = t; refreshList(); }
   };
   function refreshList() {
@@ -329,7 +329,7 @@
     NV.setPalette && NV.setPalette(on ? 'redalert' : null);
     clearInterval(redTimer);
     if (on) {
-      NV.audio.startLoop('redalert'); NV.haptic([400, 200, 400, 200, 400]); NV.jarvis.say('red');
+      NV.audio.startLoop('redalert'); NV.haptic([400, 200, 400, 200, 400]); NV.jarvis.say('red'); NV.award('redalert');
       let i = 0; redTimer = setInterval(() => { i++; NV.haptic([300, 150, 300]); if (i % 3 === 0 && NV.settings.commentary) NV.jarvis.say('red'); }, 2600);
       refreshList();
     } else { NV.audio.stopLoop(); NV.haptic(0); NV.jarvis.say('standDown'); refreshList(); }
@@ -401,6 +401,7 @@
       const r = e.currentTarget.getBoundingClientRect(), mx = e.clientX - r.left, my = e.clientY - r.top, R = Math.min(r.width, r.height) / 2 - 22;
       let best = null, bd = 30;
       RD.contacts.forEach((c) => { const a = c.ang - Math.PI / 2, px = r.width / 2 + Math.cos(a) * c.dist * R, py = r.height / 2 + Math.sin(a) * c.dist * R, d = Math.hypot(px - mx, py - my); if (d < bd) { bd = d; best = c; } });
+      if (best) NV.award('radar-contact');
       if (best) NV.jarvis.speak(`Contact: ${best.name}, ${Math.round(best.dist * RD.range)} metres. Classification ${best.cls.toLowerCase()}. ${NV.pick(NV.jarvis.lines.contact)}`, { tag: 'SONAR' });
       else RD.doPulse();
     });

@@ -9,6 +9,11 @@
   const L = J.lines = {
     quips: [
       'I have scanned the room, Sir. It remains stubbornly a room.',
+      'The sky dome is up to date, Sir. The Moon is exactly where I left it.',
+      'If you arm the Perimeter Guard, I promise to be dramatic about it.',
+      'The metal detector has found another spoon. We now have a collection.',
+      'Say "Jarvis, status report" and I shall pretend to be very busy.',
+      'Achievement unlocked: listening to me. Worth zero points, but much appreciated.',
       'Sensors nominal. Imagination, as ever, running slightly hot.',
       'Should anything suspicious appear, I shall describe it in unnecessary detail.',
       'The scanner is calibrated to one part in a million. The other parts are educated guesswork.',

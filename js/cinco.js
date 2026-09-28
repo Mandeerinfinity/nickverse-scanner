@@ -33,7 +33,35 @@
     { name: 'CINCO Couch Periscope', line: 'See the snacks. Never stand up.', tag: 'Survey the whole kitchen from the sofa. Like a submarine, only crumbier.',
       icon: I('<path d="M10 46h44v8H10z" fill="#c9a27a"/><path d="M14 46v-8h36v8" fill="#e0bf94"/><path d="M40 38V14h10" /><rect x="46" y="9" width="10" height="10" rx="2" fill="#9fd3ff"/><path d="M34 14h6"/>'),
       feats: ['Telescoping reach of up to two whole rooms', 'Built-in crumb deflector', 'Night mode for 3 a.m. fridge reconnaissance', 'Certified by the Institute of Staying Put'],
-      was: '$2,400', price: '$29.95', plus: 'plus a structural survey of your couch', fine: 'The periscope does not fetch snacks. We have been asked many, many times.' }
+      was: '$2,400', price: '$29.95', plus: 'plus a structural survey of your couch', fine: 'The periscope does not fetch snacks. We have been asked many, many times.' },
+    { name: 'CINCO Bluetooth Spoon', line: 'Pairs with soup.', tag: 'Finally, a spoon that connects with your soup on a deeper level.',
+      icon: I('<ellipse cx="24" cy="22" rx="11" ry="14" fill="#e8eef5"/><path d="M28 34l20 22" stroke-width="5"/><path d="M40 10q6 6 0 12M46 6q10 10 0 20" stroke="#3a7bd5" stroke-width="2.5"/>'),
+      feats: ['Auto-pairs with any broth within ten metres', 'Firmware updates mid-spoonful', 'Plays a gentle chime when the soup is too hot', 'Now compatible with cereal (beta)'],
+      was: '$649', price: '$14.95', plus: 'plus a soup subscription (mandatory)', fine: 'Do not submerge. It is a spoon. We know. Please do not submerge it anyway. Gazpacho not supported.' },
+    { name: 'CINCO Silent Doorbell', line: 'For people who would rather not.', tag: 'Visitors press it. Nothing happens. Everybody wins.',
+      icon: I('<rect x="18" y="10" width="28" height="44" rx="8" fill="#d8dde6"/><circle cx="32" cy="36" r="8" fill="#ffd23f"/><path d="M12 12l40 40" stroke="#e02c3e" stroke-width="4"/>'),
+      feats: ['Zero decibels of pure, uninterrupted peace', 'Optional sign reading \u201cNobody Is Home (Probably)\u201d', 'Battery lasts forever because it does nothing', 'Introvert-certified by people who did not reply'],
+      was: '$180', price: '$19.95', plus: 'plus one awkward wave through the window', fine: 'CINCO is not liable for missed parcels, missed guests, or the slow realisation that you missed a birthday.' },
+    { name: 'CINCO Cloud Storage Jar', line: 'Your data, in an actual cloud.', tag: 'We have taken cloud storage literally, and put a real cloud in a real jar.',
+      icon: I('<path d="M20 16h24v6l4 6v24a6 6 0 0 1-6 6H22a6 6 0 0 1-6-6V28l4-6z" fill="#cfe9ff"/><path d="M22 40a5 5 0 0 1 2-9 7 7 0 0 1 13-2 6 6 0 0 1 4 11z" fill="#fff"/><path d="M20 16h24"/>'),
+      feats: ['Holds up to one (1) cloud, uncompressed', 'Unlimited bandwidth, limited lid strength', 'Automatic backups whenever it rains', 'End-to-end encrypted by a very tight lid'],
+      was: '$9.99 per month forever', price: '$11.95', plus: 'plus condensation fees', fine: 'Cloud may evaporate. Do not open indoors. Data stored in the jar cannot be retrieved, read, or explained.' },
+    { name: 'CINCO Self-Folding Map', line: 'It folds itself. Into a swan.', tag: 'Never struggle to refold a map again. It will do it for you, beautifully and incorrectly.',
+      icon: I('<path d="M10 18l14-6 16 6 14-6v34l-14 6-16-6-14 6z" fill="#fff3c4"/><path d="M24 12v34M40 18v34"/><path d="M30 34q6-10 12-2q-4 2-6 8z" fill="#fff" stroke-width="2.5"/>'),
+      feats: ['Folds into a swan, a crane, or occasionally a frog', 'Never folds back into a map', 'Shows every road except the one you need', 'Waterproof, Nick-proof, directionless'],
+      was: '$99', price: '$8.95', plus: 'plus a compass (sold separately, also folds)', fine: 'Map is to scale, though CINCO cannot confirm which scale. Swan is decorative. Do not follow the swan.' },
+    { name: 'CINCO Anti-Gravity Toast', line: 'Always lands butter-side up. On the ceiling.', tag: 'Breakfast, now with a refreshing disregard for physics.',
+      icon: I('<path d="M16 30c-4-10 4-18 16-18s20 8 16 18v20H16z" fill="#e7b46a"/><path d="M22 30h20v14H22z" fill="#ffe28a"/><path d="M26 6l6-4 6 4M32 2v8" stroke-width="2.5"/>'),
+      feats: ['Floats gently to the ceiling within four seconds', 'Butter side faces up, as nature intended', 'Comes with a stepladder-shaped spatula', 'Crumbs fall upwards, which is new'],
+      was: '$75 a slice', price: '$4.95', plus: 'plus a very tall friend', fine: 'Do not toast near ceiling fans. Jam may experience vertigo. Marmalade is strictly forbidden.' },
+    { name: 'CINCO Pre-Lost Keys', line: 'We lose them so you don\u2019t have to.', tag: 'Skip the panic. Your keys arrive already missing.',
+      icon: I('<circle cx="22" cy="24" r="10" fill="#ffd23f"/><path d="M30 30l18 18M42 42l5-5M47 47l5-5"/><path d="M40 10h14v14" stroke-dasharray="3 4"/><text x="44" y="22" font-size="12" fill="#3a2200" stroke="none" font-family="sans-serif" font-weight="700">?</text>'),
+      feats: ['Shipped directly to a location we cannot disclose', 'Saves an average of 11 minutes of searching', 'Includes a keyring with nothing on it', 'Pairs perfectly with the CINCO Left-Sock Radar'],
+      was: '$30', price: '$2.95', plus: 'plus a spare set, also lost', fine: 'Keys may turn up in the sofa after purchase. This is a known issue and is considered a premium feature.' },
+    { name: 'CINCO Emotional Support Stapler', line: 'It believes in you. And in paper.', tag: 'Holds your documents together. Holds you together, too.',
+      icon: I('<path d="M10 40h44v10H10z" fill="#ff9aa2"/><path d="M12 40l6-16h34l2 8H20" fill="#ffc4cb"/><circle cx="26" cy="31" r="1.6" fill="#3a2200"/><circle cx="36" cy="31" r="1.6" fill="#3a2200"/><path d="M27 35q4 3 8 0" stroke-width="2"/>'),
+      feats: ['Whispers “you’ve got this” with every staple', 'Refuses to staple anything you will regret', 'Comes with 5,000 staples and 5,000 affirmations', 'Jams only when it senses you need a break'],
+      was: '$310', price: '$7.95', plus: 'plus one (1) weekly check-in', fine: 'Stapler is not a licensed therapist. It is, however, a very good listener. Do not staple feelings.' }
   ];
   const STEPS = ['Contacting Gary in Accounts…', 'Consulting Legal\u2019s Magic 8-Ball…', 'Converting dollars into vibes…', 'Checking whether you REALLY need this…', 'Asking J.A.R.V.I.S. for permission…', 'Finalising… (this is the slow bit)'];
   const RESULTS = [
@@ -51,8 +79,14 @@
     ['CINCO Personal Rain Cloud', 'Clouds sold in spring have unionised and are demanding sunshine breaks.', 'Remedy: negotiate in good faith. Offer a rainbow.'],
     ['CINCO Honk-Horn Shoehorn', 'Honk volume may exceed the legal limit for most continents.', 'Remedy: use only while standing in a different country.'],
     ['CINCO Pocket Sun', 'Several Pocket Suns shipped with a tiny planet already in orbit.', 'Remedy: be kind to the inhabitants. They have started paying taxes.'],
-    ['CINCO Wi-Fi Scented Candle', 'Some candles smell faintly of dial-up. Screeching has been reported.', 'Remedy: open a window and wait for the handshake to finish.']
+    ['CINCO Wi-Fi Scented Candle', 'Some candles smell faintly of dial-up. Screeching has been reported.', 'Remedy: open a window and wait for the handshake to finish.'],
+    ['CINCO Bluetooth Spoon', 'Certain spoons have paired with the neighbour’s soup instead.', 'Remedy: exchange soups. Build community.'],
+    ['CINCO Silent Doorbell', 'A batch of doorbells has started making a faint noise.', 'Remedy: return to CINCO for immediate silencing.'],
+    ['CINCO Anti-Gravity Toast', 'Some toast has achieved low Earth orbit.', 'Remedy: wave. It can see you.'],
+    ['CINCO Cloud Storage Jar', 'Several jars now contain a small, localised thunderstorm.', 'Remedy: do not open during business hours.'],
+    ['CINCO Self-Folding Map', 'Maps have begun folding their owners.', 'Remedy: stay very still and think flat thoughts.']
   ];
+  const browsed = new Set(NV.store.get('browsed', []));
   let adIdx = 0, adTimer = null, cur = 0, buys = 0, dodges = 0, busy = false, promoTimer = null, promoLeft = 599, recallTimer = null, recallIdx = Math.floor(Math.random() * RECALLS.length);
 
   function adShow(i, animate = true) {
@@ -63,12 +97,13 @@
   function startRotation() { clearInterval(adTimer); adTimer = setInterval(() => { if (!document.hidden) adShow(adIdx + 1); }, 7000); }
   CI.open = (i = adIdx) => {
     cur = (i + PRODUCTS.length) % PRODUCTS.length; const p = PRODUCTS[cur]; buys = 0; dodges = 0; busy = false;
+    browsed.add(cur); NV.store.set('browsed', [...browsed]); if (browsed.size >= 5) NV.award('shopper');
     $('#promo-icon').innerHTML = p.icon; NV.text('#promo-name', p.name); NV.text('#promo-tag', '\u201c' + p.tag + '\u201d');
     $('#promo-feats').innerHTML = p.feats.map((f) => `<li>${NV.esc(f)}</li>`).join('');
     NV.text('#promo-was', p.was); NV.text('#promo-price', p.price); NV.text('#promo-plus', p.plus); NV.text('#promo-fine', p.fine);
     $('#promo-result').hidden = true; $('#promo-progress').hidden = true; $('#promo-btns').hidden = false; NV.text('#promo-buy', 'BUY NOW'); $('#promo-buy').style.transform = '';
     promoLeft = 599; clearInterval(promoTimer); promoTimer = setInterval(tickPromo, 1000); tickPromo();
-    NV.openModal('promo'); NV.audio.confirm(); clearInterval(adTimer);
+    NV.openModal('promo'); clearInterval(adTimer);
   };
   function tickPromo() { promoLeft--; if (promoLeft < 0) promoLeft = 599; NV.text('#promo-timer', promoLeft % 97 === 0 ? 'OFFER EXTENDED! (IT ALWAYS IS)' : `OFFER ENDS IN 00:${NV.pad(Math.floor(promoLeft / 60))}:${NV.pad(promoLeft % 60)}`); }
   CI.close = () => { clearInterval(promoTimer); startRotation(); };
@@ -85,7 +120,7 @@
         const r = $('#promo-result'); r.hidden = false; r.textContent = '✓ ' + RESULTS[(buys - 1 + cur) % RESULTS.length](Math.floor(100000 + Math.random() * 899999));
         NV.audio.cash(); NV.haptic([30, 30, 60]);
         const bb = $('#promo-card-anchor') || r; const rr = bb.getBoundingClientRect(); NV.fx.confetti(90, rr.left + rr.width / 2, rr.top);
-        setTimeout(() => NV.jarvis.say('buy'), 600);
+        setTimeout(() => NV.jarvis.say('buy'), 600); NV.award('buy');
       }
     };
     step();
@@ -112,4 +147,5 @@
     NV.onSetting((k, v) => { if (k === 'ads') document.body.classList.toggle('no-ads', !v); });
   };
   CI.products = PRODUCTS;
+  CI.next = () => CI.open(cur + 1);
 })();
