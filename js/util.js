@@ -2,10 +2,10 @@
 (function () {
   'use strict';
   const NV = (window.NV = window.NV || {});
-  NV.VERSION = '10.0.0';
+  NV.VERSION = '11.0.0';
 
   NV.THEMES = [
-    { id: 'arc',     name: 'Arc Reactor',     primary: '#4de8ff', secondary: '#bff8ff', tertiary: '#ffb547', bg: '#01060b', bg1: '#05263a', swatch: 'radial-gradient(circle at 35% 35%,#e8feff,#4de8ff 45%,#05263a)' },
+    { id: 'arc',     name: 'Cyan Core',       primary: '#4de8ff', secondary: '#bff8ff', tertiary: '#ffb547', bg: '#01060b', bg1: '#05263a', swatch: 'radial-gradient(circle at 35% 35%,#e8feff,#4de8ff 45%,#05263a)' },
     { id: 'armor',   name: 'Crimson Armor',   primary: '#ff4545', secondary: '#ffd27a', tertiary: '#ffd27a', bg: '#070102', bg1: '#2c0708', swatch: 'conic-gradient(from 200deg,#ff4545,#ffd27a,#ff4545)' },
     { id: 'stealth', name: 'Stealth Night',   primary: '#9fb4c4', secondary: '#e9f1f6', tertiary: '#7dffb5', bg: '#030405', bg1: '#12171c', swatch: 'radial-gradient(circle at 35% 35%,#e9f1f6,#56636e 50%,#0b0e11)' },
     { id: 'neon',    name: 'Nick-Verse Neon', primary: '#b46bff', secondary: '#ff5ee1', tertiary: '#5ef2ff', bg: '#05010c', bg1: '#220a3d', swatch: 'conic-gradient(from 90deg,#b46bff,#ff5ee1,#5ef2ff,#b46bff)' },
@@ -23,7 +23,7 @@
   };
 
   NV.DEFAULTS = { theme: 'arc', particles: true, scanlines: true, parallax: true, uisound: true, haptics: true, speak: true, commentary: true, volume: 0.7, voice: '', forcesim: false, wakelock: false, micoffset: 94, ads: true, recalls: true, secret: false,
-    sfxlevel: 0.9, musiclevel: 0.7, hum: false, reducemotion: false, units: /^en-US|^en-LR|^my/i.test(navigator.language || '') ? 'f' : 'c' };
+    sfxlevel: 0.9, musiclevel: 0.7, hum: false, reducemotion: false, quality: 'auto', fpshud: false, quips: true, vrate: 1, vpitch: 1, wake: false, units: /^en-US|^en-LR|^my/i.test(navigator.language || '') ? 'f' : 'c' };
   NV.settings = Object.assign({}, NV.DEFAULTS, NV.store.get('settings', {}));
   const listeners = [];
   NV.onSetting = (fn) => listeners.push(fn);
@@ -98,7 +98,7 @@
     if (!cv._obs) { cv._obs = 1; cv._ctx = cv.getContext('2d'); if (ro) ro.observe(cv); const r = cv.getBoundingClientRect(); cv._cw = r.width; cv._ch = r.height; }
     if (!ro) { const r = cv.getBoundingClientRect(); cv._cw = r.width; cv._ch = r.height; }
     const w = cv._cw, h = cv._ch; if (!w || !h) return null;
-    const dpr = NV.dpr(), tw = Math.round(w * dpr), th = Math.round(h * dpr);
+    const dpr = NV.dpr(cv._dprKind), tw = Math.round(w * dpr), th = Math.round(h * dpr);
     if (cv.width !== tw || cv.height !== th) { cv.width = tw; cv.height = th; }
     const x = cv._ctx; x.setTransform(dpr, 0, 0, dpr, 0, 0);
     return { x, w, h, dpr };

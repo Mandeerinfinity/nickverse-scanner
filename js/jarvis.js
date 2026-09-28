@@ -52,8 +52,9 @@
     voices = synth.getVoices() || [];
     const sel = NV.$('#set-voice'); if (!sel) return;
     const en = voices.filter((v) => /^en/i.test(v.lang)), list = en.length ? en : voices;
-    sel.innerHTML = '<option value="">Auto (British preferred)</option>' + list.map((v) => `<option value="${NV.esc(v.name)}">${NV.esc(v.name)} (${NV.esc(v.lang)})</option>`).join('');
-    sel.value = NV.settings.voice || '';
+    const opts = '<option value="">Auto (British preferred)</option>' + list.map((v) => `<option value="${NV.esc(v.name)}">${NV.esc(v.name)} (${NV.esc(v.lang)})</option>`).join('');
+    NV.$$('#set-voice, #jc-voice').forEach((s2) => { s2.innerHTML = opts; s2.value = NV.settings.voice || ''; });
+    NV.emit('voices', list);
     const v = chooseVoice();
     NV.text('#jv-voice', v ? `Voice: ${v.name} (${v.lang})` : 'Voice: system default (en-GB requested)');
   }
@@ -82,12 +83,14 @@
   function fakeSpeak(text) { J.speaking = true; setState('SPEAKING'); setTimeout(() => { J.speaking = false; setState('ONLINE'); }, 600 + text.length * 50); }
   function speak(text, { silentLog = false, quiet = false, tag } = {}) {
     if (!silentLog) log(text, tag);
+    NV.emit('jsay', { text, tag: tag || 'JARVIS' });
     if (!synth || !NV.settings.speak) { fakeSpeak(text); return; }
     try {
       synth.cancel();
       const u = new SpeechSynthesisUtterance(text);
       const v = chooseVoice(); if (v) { u.voice = v; u.lang = v.lang; } else u.lang = 'en-GB';
-      u.rate = 0.98; u.pitch = 0.92;
+      u.rate = 0.98 * (NV.settings.vrate || 1); u.pitch = 0.92 * (NV.settings.vpitch || 1);
+      u.onboundary = () => { J.pulse = 1; };
       const stealth = document.body.classList.contains('stealth-mode');
       u.volume = NV.clamp((NV.settings.volume + 0.2) * (quiet || stealth ? 0.4 : 1), 0, 1);
       const end = () => { J.speaking = false; setState('ONLINE'); };
@@ -98,6 +101,19 @@
     } catch (e) { fakeSpeak(text); }
   }
   J.speak = speak; J.log = log;
+  // A different voice for CINCO hold announcements (never cancels JARVIS; queues politely)
+  J.speakAlt = (text, { pitch = 1.3, rate = 1.06 } = {}) => {
+    if (!synth || !NV.settings.speak || !NV.settings.uisound) return false;
+    try {
+      const jv = chooseVoice(), pref = ['Samantha', 'Google US English', 'Microsoft Zira', 'Karen', 'Victoria', 'Moira', 'Tessa', 'Microsoft Aria', 'Microsoft Jenny', 'Fiona'];
+      let v = null; for (const p of pref) { v = voices.find((x) => x.name.includes(p) && x !== jv); if (v) break; }
+      if (!v) v = voices.find((x) => /^en/i.test(x.lang) && x !== jv && !/en[-_]GB/i.test(x.lang)) || voices.find((x) => /^en/i.test(x.lang) && x !== jv) || null;
+      const u = new SpeechSynthesisUtterance(text); if (v) { u.voice = v; u.lang = v.lang; } else u.lang = 'en-US';
+      u.pitch = v ? pitch : 1.6; u.rate = rate; u.volume = NV.clamp(NV.settings.volume * 0.9, 0, 1); synth.speak(u); return true;
+    } catch (e) { return false; }
+  };
+  J.voiceList = () => { const en = voices.filter((v) => /^en/i.test(v.lang)); return en.length ? en : voices; };
+  J.currentVoice = () => chooseVoice();
   J.say = (key, opts) => speak(pick(L[key] || L.quips), opts);
   J.auto = (key, minGap = 9000) => { if (!NV.settings.commentary) return; const n = performance.now(); if (n - lastAuto < minGap) return; lastAuto = n; J.say(key); };
   J.quip = () => J.say('quips');
@@ -127,35 +143,50 @@
     speak(p.join(' '), { tag: 'ANALYSIS' });
   };
 
-  function resize() { if (!canvas) return; const r = canvas.getBoundingClientRect(); if (!r.width) return; dpr = NV.dpr(); S = r.width; canvas.width = canvas.height = Math.round(S * dpr); }
-  J.draw = function (t) {
-    if (!canvas || !canvas.offsetParent) return;
-    if (!S || canvas.width !== Math.round(S * dpr)) resize(); if (!S) return;
-    const c = NV.colors, x = ctx, R = S * 0.42, tt = t / 1000;
-    J.level = NV.lerp(J.level, J.speaking ? 0.55 + 0.45 * Math.abs(Math.sin(tt * 9) * Math.sin(tt * 3.7)) : 0.08, 0.15);
-    x.setTransform(dpr, 0, 0, dpr, S / 2 * dpr, S / 2 * dpr); x.clearRect(-S / 2, -S / 2, S, S);
-    const g = x.createRadialGradient(0, 0, 0, 0, 0, R * 1.1);
-    g.addColorStop(0, NV.rgba(c.secondary, 0.35 + J.level * 0.4)); g.addColorStop(0.4, NV.rgba(c.primary, 0.12 + J.level * 0.2)); g.addColorStop(1, NV.rgba(c.primary, 0));
-    x.fillStyle = g; x.beginPath(); x.arc(0, 0, R * 1.1, 0, Math.PI * 2); x.fill();
-    const N = 56; x.lineCap = 'round'; x.shadowColor = c.primary; x.shadowBlur = 8 * dpr;
-    for (let i = 0; i < N; i++) {
-      const a = (i / N) * Math.PI * 2 + tt * 0.2;
-      const n = 0.5 + 0.5 * Math.sin(i * 0.9 + tt * 6) * Math.sin(i * 0.37 - tt * 3.3);
-      const len = R * (0.08 + J.level * 0.34 * n + 0.03 * Math.sin(tt * 2 + i)), r0 = R * 0.62;
-      x.strokeStyle = i % 2 ? c.primary : c.secondary; x.lineWidth = Math.max(1.2, S * 0.012);
-      x.beginPath(); x.moveTo(Math.cos(a) * r0, Math.sin(a) * r0); x.lineTo(Math.cos(a) * (r0 + len), Math.sin(a) * (r0 + len)); x.stroke();
+  function resize() { if (!canvas) return; const r = canvas.getBoundingClientRect(); if (!r.width) return; dpr = Math.min(NV.dpr(), 2); S = r.width; canvas.width = canvas.height = Math.round(S * dpr); }
+  // ---- holo-core orb: shared by the side panel and the console. Batched paths, pre-rendered glow sprites. ----
+  let spr = null, sprV = -1;
+  function sprites(c) {
+    if (sprV === c.v && spr) return spr; sprV = c.v;
+    const mk = (stops) => { const cv = document.createElement('canvas'); cv.width = cv.height = 128; const x = cv.getContext('2d'), g = x.createRadialGradient(64, 64, 0, 64, 64, 64); stops.forEach(([o, col]) => g.addColorStop(o, col)); x.fillStyle = g; x.fillRect(0, 0, 128, 128); return cv; };
+    spr = { halo: mk([[0, NV.rgba(c.secondary, 0.55)], [0.35, NV.rgba(c.primary, 0.22)], [1, NV.rgba(c.primary, 0)]]), core: mk([[0, '#ffffff'], [0.35, c.secondary], [0.75, NV.rgba(c.primary, 0.55)], [1, NV.rgba(c.primary, 0)]]) };
+    return spr;
+  }
+  const hexPath = (x, r, rot) => { x.moveTo(Math.cos(rot) * r, Math.sin(rot) * r); for (let i = 1; i <= 6; i++) { const a = rot + i * Math.PI / 3; x.lineTo(Math.cos(a) * r, Math.sin(a) * r); } };
+  J.drawCore = function (x, size, t, o = {}) {
+    const c = NV.colors, R = size * 0.44, tt = t / 1000, lv = o.level ?? J.level, pu = o.pulse ?? (J.pulse || 0), lis = !!o.listening, sp = sprites(c), TAU = Math.PI * 2;
+    x.clearRect(-size / 2, -size / 2, size, size);
+    const hs = R * (1.9 + lv * 0.5); x.globalAlpha = 0.55 + lv * 0.45; x.drawImage(sp.halo, -hs / 2 * 1.1, -hs / 2 * 1.1, hs * 1.1, hs * 1.1); x.globalAlpha = 1;
+    // outer tick ring (one path)
+    x.lineCap = 'round'; x.lineWidth = Math.max(1, size * 0.008); x.strokeStyle = NV.rgba(c.primary, 0.55); x.beginPath();
+    const rot = tt * 0.12; for (let i = 0; i < 72; i++) { const a = rot + i / 72 * TAU, L = i % 6 === 0 ? 0.09 : 0.045; x.moveTo(Math.cos(a) * R, Math.sin(a) * R); x.lineTo(Math.cos(a) * R * (1 - L), Math.sin(a) * R * (1 - L)); } x.stroke();
+    // counter-rotating arc segments
+    x.lineWidth = Math.max(1.2, size * 0.012); x.strokeStyle = NV.rgba(c.secondary, 0.7); x.beginPath();
+    for (let k = 0; k < 3; k++) { const a0 = -tt * 0.5 + k * TAU / 3; x.moveTo(Math.cos(a0) * R * 0.84, Math.sin(a0) * R * 0.84); x.arc(0, 0, R * 0.84, a0, a0 + TAU / 3 - 0.35); } x.stroke();
+    // voice equaliser: radial bars, two colours => two paths
+    const N = 48, r0 = R * 0.5, wob = (i) => 0.5 + 0.5 * Math.sin(i * 0.9 + tt * 7) * Math.sin(i * 0.37 - tt * 3.1);
+    x.lineWidth = Math.max(1.2, size * 0.013);
+    for (let pass = 0; pass < 2; pass++) {
+      x.strokeStyle = pass ? c.secondary : c.primary; x.beginPath();
+      for (let i = pass; i < N; i += 2) { const a = i / N * TAU + tt * 0.25, len = R * (0.05 + (lv * 0.26 + pu * 0.08) * wob(i) + 0.015 * Math.sin(tt * 2 + i)); x.moveTo(Math.cos(a) * r0, Math.sin(a) * r0); x.lineTo(Math.cos(a) * (r0 + len), Math.sin(a) * (r0 + len)); }
+      x.stroke();
     }
-    x.lineWidth = 1.5; x.strokeStyle = NV.rgba(c.primary, 0.7);
-    x.beginPath(); x.arc(0, 0, R * 0.56, tt, tt + Math.PI * 1.4); x.stroke();
-    x.strokeStyle = NV.rgba(c.secondary, 0.5);
-    x.beginPath(); x.arc(0, 0, R * 0.5, -tt * 1.5, -tt * 1.5 + Math.PI * 0.8); x.stroke();
-    x.beginPath(); x.arc(0, 0, R * 1.02, -tt * 0.4, -tt * 0.4 + Math.PI * 0.5); x.stroke();
-    x.beginPath(); x.arc(0, 0, R * 1.02, -tt * 0.4 + Math.PI, -tt * 0.4 + Math.PI * 1.5); x.stroke();
-    const cr = R * (0.28 + J.level * 0.08), cg = x.createRadialGradient(0, 0, 0, 0, 0, cr);
-    cg.addColorStop(0, '#fff'); cg.addColorStop(0.5, c.secondary); cg.addColorStop(1, NV.rgba(c.primary, 0.2));
-    x.shadowBlur = 24 * dpr; x.fillStyle = cg; x.beginPath(); x.arc(0, 0, cr, 0, Math.PI * 2); x.fill(); x.shadowBlur = 0;
-    x.font = `700 ${S * 0.09}px Orbitron, sans-serif`; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillStyle = NV.rgba(c.bg, 0.85);
-    x.fillText('J', 0, 1);
+    // hexagonal frame
+    x.lineWidth = 1.2; x.strokeStyle = NV.rgba(c.primary, 0.6); x.beginPath(); hexPath(x, R * 0.42, tt * 0.2); x.stroke();
+    x.strokeStyle = NV.rgba(c.secondary, 0.25); x.beginPath(); hexPath(x, R * 0.36, -tt * 0.3 + 0.5); x.stroke();
+    if (lis) { x.setLineDash([4, 6]); x.lineDashOffset = -tt * 30; x.strokeStyle = c.tertiary || '#ffb547'; x.lineWidth = 2; x.beginPath(); x.arc(0, 0, R * (0.95 + 0.03 * Math.sin(tt * 6)), 0, TAU); x.stroke(); x.setLineDash([]); }
+    // core
+    const cr = R * (0.3 + lv * 0.08 + pu * 0.03); x.drawImage(sp.core, -cr, -cr, cr * 2, cr * 2);
+    if (o.letter !== false) { x.font = `700 ${Math.round(size * 0.085)}px Orbitron, sans-serif`; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillStyle = NV.rgba(c.bg, 0.8); x.fillText('J', 0, 1); }
+  };
+  J.draw = function (t, fi = 0) {
+    J.level = NV.lerp(J.level, J.speaking ? 0.55 + 0.45 * Math.abs(Math.sin(t / 111) * Math.sin(t / 270)) : (NV.voice && NV.voice.listening ? 0.2 : 0.06), 0.15);
+    J.pulse = (J.pulse || 0) * 0.9;
+    if (!canvas || !NV.inView(canvas)) return;
+    if (!J.speaking && J.level < 0.1 && fi % (NV.perf.tier <= 1 ? 3 : 2)) return; // idle orb: 20-30 Hz is plenty
+    if (!S || canvas.width !== Math.round(S * dpr)) resize(); if (!S) return;
+    ctx.setTransform(dpr, 0, 0, dpr, S / 2 * dpr, S / 2 * dpr);
+    J.drawCore(ctx, S, t, { listening: NV.voice && (NV.voice.listening || NV.voice.wakeOn) });
   };
 
   J.init = function () {

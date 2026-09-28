@@ -12,8 +12,8 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
-<meta name="nv-version" content="10.0.0">
-<link rel="stylesheet" href="css/style.css?v=10.0.0">
+<meta name="nv-version" content="11.0.0">
+<link rel="stylesheet" href="css/style.css?v=11.0.0">
 </head>
 <body data-theme="arc">
 
@@ -38,6 +38,7 @@
 <!-- Boot -->
 <div id="boot" aria-hidden="true">
   <div class="boot-hex" aria-hidden="true"></div>
+  <div class="boot-flash" aria-hidden="true"></div>
   <div class="boot-inner">
     <div class="boot-core">
       <svg class="boot-rings" viewBox="0 0 200 200" aria-hidden="true">
@@ -50,7 +51,8 @@
       <div class="boot-pct mono" id="boot-pct">00%</div>
     </div>
     <div class="boot-title">NICK-VERSE <span>SCANNER</span></div>
-    <div class="boot-sub mono">CINCO SCAN-O-MATIC 9000 · MARK X · FIRMWARE 10.0.0</div>
+    <div class="boot-sub mono">CINCO SCAN-O-MATIC 9000 · MARK XI · FIRMWARE 11.0.0</div>
+    <div class="boot-phase mono" id="boot-phase">PHASE 1 / 3 · KERNEL</div>
     <div class="boot-grid" id="boot-grid" aria-hidden="true"></div>
     <div class="boot-lines" id="boot-lines"></div>
     <div class="boot-bar"><i id="boot-progress"></i></div>
@@ -65,7 +67,7 @@
       <svg class="brand-mark" viewBox="0 0 100 100"><use href="#nv-mark"/></svg>
       <span class="brand-text">
         <span class="brand-name">NICK<span>-</span>VERSE</span>
-        <span class="brand-sub">SCANNER // HANDHELD SENSOR ARRAY <em>v10.0</em></span>
+        <span class="brand-sub">SCANNER // HANDHELD SENSOR ARRAY <em>v11.0</em></span>
       </span>
     </button>
     <div class="top-status">
@@ -571,6 +573,144 @@
         </section>
 
         <!-- ACHIEVEMENTS -->
+        <!-- JARVIS CONSOLE -->
+        <section class="panel glass module" data-mod="jarvis" id="mod-jc" aria-label="JARVIS console">
+          <header class="panel-head"><span class="ph-idx">AI</span><h2>JARVIS Console</h2><span class="badge live" id="jc-state">ONLINE</span></header>
+          <div class="jc-stage">
+            <div class="jc-orb-wrap"><canvas id="jc-orb" aria-label="JARVIS holo-core. Tap to talk."></canvas></div>
+            <div class="jc-side">
+              <canvas class="jc-wave" id="jc-wave" aria-hidden="true"></canvas>
+              <div class="jc-vline mono"><span class="k">VOICE</span><span id="jc-vname">--</span></div>
+              <button class="btn primary jc-mic" id="jc-mic" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></svg><span>Talk</span></button>
+            </div>
+          </div>
+          <div class="jc-log" id="jc-log" aria-live="polite"></div>
+          <div class="chips jc-chips" id="jc-chips"></div>
+          <form class="jc-form" id="jc-form" autocomplete="off"><input id="jc-q" maxlength="200" placeholder="Ask JARVIS… e.g. “remind me in 10 minutes to stretch”" aria-label="Ask JARVIS"><button class="btn primary sm" type="submit">Send</button></form>
+          <div class="jc-cards">
+            <div class="jc-card"><h3>Session memory</h3><ul class="jc-list" id="jc-mem"></ul></div>
+            <div class="jc-card"><h3>Reminders &amp; timers</h3><ul class="jc-list" id="jc-rem"></ul></div>
+            <div class="jc-card jc-vset"><h3>Voice &amp; personality</h3>
+              <select id="jc-voice" aria-label="JARVIS voice"></select>
+              <label class="jc-rng"><span>Rate</span><input type="range" id="jc-rate" min="0.6" max="1.6" step="0.05" aria-label="Speech rate"><b class="mono" id="jc-rate-v">1.00×</b></label>
+              <label class="jc-rng"><span>Pitch</span><input type="range" id="jc-pitch" min="0.5" max="1.6" step="0.05" aria-label="Speech pitch"><b class="mono" id="jc-pitch-v">1.00</b></label>
+              <label class="switch"><input type="checkbox" data-set="speak"><i></i>Speak replies aloud</label>
+              <label class="switch"><input type="checkbox" data-set="wake"><i></i>Wake phrase “Jarvis”</label>
+              <div class="stat-note wrap" id="jc-wake-note"></div>
+              <label class="switch"><input type="checkbox" data-set="quips"><i></i>Unprompted quips</label>
+              <div class="btn-row"><button class="btn ghost sm" id="jc-test">Test voice</button><button class="btn ghost sm" id="jc-clear">Clear chat</button></div>
+            </div>
+          </div>
+          <div class="hint">Everything is answered on this device by rules, not a paid AI, so JARVIS works offline. Voice input uses the browser's speech recognition (Chrome and Safari).</div>
+        </section>
+
+        <!-- SOUNDSCAPE -->
+        <section class="panel glass module" data-mod="sound" aria-label="Soundscape and sound board">
+          <header class="panel-head"><span class="ph-idx">SND</span><h2>Soundscape</h2><span class="badge" id="sc-badge">SILENT</span></header>
+          <div class="graph-card sc-vizc"><canvas id="sc-viz" aria-hidden="true"></canvas></div>
+          <div class="sc-layers" id="sc-layers"></div>
+          <div class="range-row sc-ctl"><span>Sleep timer</span><select id="sc-sleep" aria-label="Sleep timer"><option value="0">Off</option><option value="15">15 min</option><option value="30">30 min</option><option value="60">60 min</option></select><span class="mono" id="sc-sleep-left"></span><button class="btn ghost sm" id="sc-stop">Stop all</button></div>
+          <div class="sub-h">Sound board</div>
+          <div class="sc-pads" id="sc-pads"></div>
+          <div class="hint">Every sound is synthesised live in your browser, with no recordings or downloads. Soundscapes keep playing on other tools.</div>
+        </section>
+
+        <!-- CLAP SWITCH -->
+        <section class="panel glass module" data-mod="clap" aria-label="Clap switch">
+          <header class="panel-head"><span class="ph-idx">CLP</span><h2>Clap Switch</h2><span class="badge" id="cl-badge">OFF</span></header>
+          <div class="cl-top">
+            <button class="cl-lamp" id="cl-lamp" aria-label="Holo-lamp (toggle)"><svg viewBox="0 0 64 64" aria-hidden="true"><path class="cl-bulb" d="M32 8a17 17 0 0 0-10 30.8V46h20v-7.2A17 17 0 0 0 32 8z"/><path class="cl-base" d="M24 50h16M26 55h12"/><path class="cl-fil" d="M27 34l3-8 2 6 2-6 3 8"/></svg><span class="cl-glow"></span></button>
+            <div class="cl-side">
+              <div class="cl-dots" id="cl-dots" aria-live="polite"></div>
+              <div class="cl-last" id="cl-last">Clap twice or three times.</div>
+              <div class="cl-state stat-note wrap" id="cl-state">Disarmed.</div>
+            </div>
+          </div>
+          <div class="graph-card"><div class="graph-head"><span>Mic level vs trigger</span><span class="mono gv">dB</span></div><canvas class="graph cl-meter" id="cl-meter"></canvas></div>
+          <div class="range-row"><span>Sensitivity</span><input type="range" id="cl-sens" min="1" max="10" value="6" aria-label="Clap sensitivity"></div>
+          <div class="cl-map">
+            <label>👏👏 Two claps<select id="cl-map2" aria-label="Two-clap action"></select></label>
+            <label>👏👏👏 Three claps<select id="cl-map3" aria-label="Three-clap action"></select></label>
+          </div>
+          <div class="btn-row wrap"><button class="btn primary" id="cl-arm">Arm Clap Switch</button><button class="btn ghost sm" id="cl-test2">Test ×2</button><button class="btn ghost sm" id="cl-test3">Test ×3</button></div>
+          <div class="hint">Listens for sharp sound spikes above the room's background level. Loud music can trigger it too. The mic audio never leaves the device.</div>
+        </section>
+
+        <!-- PARANORMAL DETECTOR -->
+        <section class="panel glass module" data-mod="ghost" aria-label="Paranormal detector">
+          <header class="panel-head"><span class="ph-idx">EMF</span><h2>Paranormal Detector</h2><span class="badge" id="gh-badge">IDLE</span></header>
+          <div class="disclaimer" role="note"><b>👻 100% FAKE.</b> This is a comedy toy. Every reading, ghost and spooky word is made up by a random number generator. No spirits were harmed.</div>
+          <div class="gh-top">
+            <div class="gh-gauge"><canvas id="gh-gauge" aria-label="EMF meter (fictional)"></canvas></div>
+            <div class="gh-read">
+              <div class="ro"><span class="k">Field</span><span class="v mono" id="gh-mg">0.0 mG</span></div>
+              <div class="ro"><span class="k">Activity</span><span class="v mono" id="gh-level">CALM</span></div>
+              <div class="ro"><span class="k">Spirit box</span><span class="v mono" id="gh-freq">--</span></div>
+            </div>
+          </div>
+          <div class="gh-word" id="gh-word" aria-live="polite"></div>
+          <div class="gh-alert" id="gh-alert" hidden><b>⚠ ENTITY DETECTED</b><span id="gh-alert-t"></span></div>
+          <div class="stat-note wrap" id="gh-state">Press Begin Investigation.</div>
+          <div class="chips" id="gh-qs"></div>
+          <div class="btn-row wrap"><button class="btn primary" id="gh-start">Begin Investigation</button><button class="btn ghost" id="gh-box" aria-pressed="false">Spirit Box</button><button class="btn ghost" id="gh-banish">Banish</button></div>
+          <div class="sub-h">Entity log</div>
+          <ul class="gh-ents" id="gh-ents"><li class="empty">No entities yet. Suspiciously quiet.</li></ul>
+        </section>
+
+        <!-- GPS SPEEDOMETER -->
+        <section class="panel glass module" data-mod="speed" aria-label="GPS speedometer">
+          <header class="panel-head"><span class="ph-idx">GPS</span><h2>GPS Speedometer</h2><span class="badge" id="sp-badge">IDLE</span></header>
+          <div class="gauge-card big sp-gc"><canvas id="sp-gauge" aria-label="Speed gauge"></canvas></div>
+          <div class="seg sp-units" id="sp-units" role="group" aria-label="Units"><button data-u="kmh">km/h</button><button data-u="mph">mph</button><button data-u="ms">m/s</button><button data-u="kn">knots</button></div>
+          <div class="sp-grid">
+            <div class="ro"><span class="k">Trip</span><span class="v mono" id="sp-trip">0.00 km</span></div>
+            <div class="ro"><span class="k">Max</span><span class="v mono" id="sp-max">0</span></div>
+            <div class="ro"><span class="k">Avg (moving)</span><span class="v mono" id="sp-avg">0</span></div>
+            <div class="ro"><span class="k">Moving time</span><span class="v mono" id="sp-time">00:00</span></div>
+            <div class="ro"><span class="k">Altitude</span><span class="v mono" id="sp-alt">--</span></div>
+            <div class="ro"><span class="k">Heading</span><span class="v mono" id="sp-head">--</span></div>
+          </div>
+          <div class="stat-note wrap mono" id="sp-src">GPS idle</div>
+          <div class="btn-row wrap"><button class="btn primary" id="sp-start">Start GPS</button><button class="btn ghost" id="sp-sim">Simulate</button><button class="btn ghost" id="sp-reset">Reset Trip</button></div>
+          <div class="hint">Uses your phone's GPS (location stays on the device). Accuracy varies, and GPS is weak indoors. Passengers only. Never look at a phone while driving.</div>
+        </section>
+
+        <!-- MISSION PLANNER -->
+        <section class="panel glass module" data-mod="mission" aria-label="Mission planner">
+          <header class="panel-head"><span class="ph-idx">MSN</span><h2>Mission Planner</h2><span class="badge" id="ms-badge">STANDBY</span></header>
+          <div class="ms-top">
+            <div class="ms-ring" id="ms-ring"><div class="ms-ring-in"><b class="mono" id="ms-pct">0%</b><small id="ms-count">0 / 0</small></div></div>
+            <div class="ms-side">
+              <input class="ms-name" id="ms-name" maxlength="40" aria-label="Mission name">
+              <div class="ms-clock mono" id="ms-clock">T−05:00</div>
+              <div class="ms-bar"><i id="ms-bar"></i></div>
+              <div class="seg ms-durs" id="ms-durs"><button data-m="1">1m</button><button data-m="5" class="on">5m</button><button data-m="15">15m</button><button data-m="30">30m</button><button data-m="60">1h</button></div>
+            </div>
+          </div>
+          <div class="btn-row wrap"><button class="btn primary" id="ms-go">Launch</button><button class="btn ghost" id="ms-reset">Reset</button><select id="ms-tpl" aria-label="Checklist templates"></select></div>
+          <ul class="ms-list" id="ms-list"></ul>
+          <form class="jc-form ms-add" id="ms-add" autocomplete="off"><input id="ms-item" maxlength="60" placeholder="Add checklist item…" aria-label="New checklist item"><button class="btn ghost sm" type="submit">Add</button></form>
+          <div class="hint">The countdown keeps running on other tools. JARVIS calls the last ten seconds and reports how much of the checklist got done.</div>
+        </section>
+
+        <!-- DAILY BRIEFING -->
+        <section class="panel glass module" data-mod="brief" aria-label="Daily briefing">
+          <header class="panel-head"><span class="ph-idx">DAY</span><h2>Daily Briefing</h2><span class="ph-sub mono" id="br-time">--:--</span></header>
+          <div class="br-hero"><div><div class="br-greet" id="br-greet">Good day, Nicholas</div><div class="br-date mono" id="br-date"></div></div><button class="btn primary sm" id="br-read">▶ Read aloud</button></div>
+          <div class="br-grid">
+            <div class="br-card br-wx"><span class="k">Weather</span><b id="br-temp">--</b><span id="br-wdesc"></span><small id="br-wsub"></small><button class="btn ghost sm" id="br-wx-fetch" hidden>Fetch</button></div>
+            <div class="br-card br-moonc"><canvas id="br-moon-cv" aria-hidden="true"></canvas><span class="k">Moon</span><b id="br-moon">--</b><small id="br-moon-s"></small></div>
+            <div class="br-card"><span class="k">Sun</span><b class="mono br-sun" id="br-sun">--</b><small id="br-sun-s"></small></div>
+            <div class="br-card"><span class="k">Battery</span><b class="mono" id="br-bat">--</b><div class="meter"><i id="br-bat-bar" class="sx"></i></div></div>
+            <div class="br-card"><span class="k">Achievements</span><b class="mono" id="br-ach">--</b><small id="br-ach-s"></small></div>
+            <div class="br-card"><span class="k">Next reminder</span><b class="mono" id="br-rem">--</b><small id="br-rem-s"></small></div>
+            <div class="br-card"><span class="k">Mission</span><b class="mono" id="br-ms">--</b><small id="br-ms-s"></small></div>
+            <div class="br-card"><span class="k">Graphics</span><b id="br-sys">--</b><small id="br-sys-s"></small></div>
+          </div>
+          <div class="br-quip"><span class="hj-k mono">JARVIS</span><span id="br-quip"></span><button class="icon-btn xs" id="br-quip-new" aria-label="Another quip" title="Another">↻</button></div>
+          <div class="br-tip"><span class="k mono">TOOL OF THE DAY</span><span id="br-tip"></span><button class="btn ghost sm" id="br-tip-go">Open</button></div>
+        </section>
+
         <section class="panel glass module" data-mod="badges" aria-label="Achievements">
           <header class="panel-head"><span class="ph-idx">ACH</span><h2>Achievements</h2><span class="ph-sub mono" id="badge-count">0 / 0</span></header>
           <div class="badge-prog"><div class="meter"><i id="badge-bar"></i></div><span class="mono" id="badge-pct">0%</span></div>
@@ -621,7 +761,7 @@
       <i></i><span>Model: CINCO Nick-Verse Scan-O-Matic 9000</span>
       <i></i><span class="fine">Warranty void if device is pointed at anything, including itself. Scan results are not legally binding in this or any adjacent dimension.</span>
     </div>
-    <div class="foot-meta mono"><span>NICK-VERSE © Nick · v10.0</span><i></i><a href="https://mandeerinfinity.github.io/nickverse-watch/" class="foot-link">Companion: NICK-VERSE Watch</a><i></i><span class="kbd-hint">Press <kbd>?</kbd> for shortcuts</span></div>
+    <div class="foot-meta mono"><span>NICK-VERSE © Nick · v11.0</span><i></i><a href="https://mandeerinfinity.github.io/nickverse-watch/" class="foot-link">Companion: NICK-VERSE Watch</a><i></i><span class="kbd-hint">Press <kbd>?</kbd> for shortcuts</span></div>
   </footer>
 </div>
 
@@ -629,6 +769,12 @@
 <aside class="drawer glass" id="settings" aria-hidden="true" aria-label="Settings">
   <header class="panel-head"><span class="ph-idx">CFG</span><h2>Settings</h2><button class="icon-btn sm" data-close="settings" title="Close">✕</button></header>
   <div class="set-group"><h3>Theme</h3><div class="theme-cards" id="theme-cards"></div></div>
+  <div class="set-group" id="set-perf">
+    <h3>Performance</h3>
+    <div class="seg quality-seg" id="set-quality" role="radiogroup" aria-label="Graphics quality"><button data-q="auto">Auto</button><button data-q="ultra">Ultra</button><button data-q="high">High</button><button data-q="balanced">Balanced</button><button data-q="battery">Battery</button></div>
+    <p class="hint left" id="quality-note">Auto watches the frame rate and steps effects down if frames take longer than 16.7 ms.</p>
+    <label class="switch"><input type="checkbox" id="set-fpshud"><i></i>FPS overlay</label>
+  </div>
   <div class="set-group">
     <h3>Ambient Effects</h3>
     <label class="switch"><input type="checkbox" id="set-particles"><i></i>Particle field</label>
@@ -641,6 +787,8 @@
     <label class="switch"><input type="checkbox" id="set-haptics"><i></i>Haptics (vibration)</label>
     <label class="switch"><input type="checkbox" id="set-speak"><i></i>JARVIS speaks aloud</label>
     <label class="switch"><input type="checkbox" id="set-commentary"><i></i>JARVIS auto-commentary</label>
+    <label class="switch"><input type="checkbox" id="set-quips"><i></i>JARVIS unprompted quips</label>
+    <label class="switch"><input type="checkbox" id="set-wake"><i></i>Wake phrase “Jarvis” (keeps the mic on)</label>
     <select id="set-voice" aria-label="JARVIS voice"></select>
   </div>
   <div class="set-group">
@@ -807,17 +955,62 @@
 <div class="modal hotline" id="hotline" aria-hidden="true" role="dialog" aria-labelledby="hot-title">
   <div class="hot-card glass">
     <button class="icon-btn sm promo-close" data-close="hotline" title="Hang up">✕</button>
-    <div class="hot-head"><span class="c5">CINCO</span><div><h2 id="hot-title">Customer Support Hotline</h2><div class="hot-sub mono">1-800-CINCO-NO · <span id="hot-clock">00:00</span> on hold</div></div></div>
-    <div class="hot-lcd" id="hot-lcd" aria-live="polite"></div>
-    <div class="hot-queue">
-      <div class="hq-k mono">YOUR POSITION IN THE QUEUE</div>
-      <div class="hq-n" id="hot-queue">7</div>
-      <div class="hq-msg" id="hot-msg">Your call is important to us. Relatively speaking.</div>
+    <div class="hot-head"><span class="c5">CINCO</span><div><h2 id="hot-title">Customer Support Hotline</h2><div class="hot-sub mono">Line 5 of 5 · <span id="hot-clock">00:00</span> on hold · menu depth <span id="hot-depth">1</span></div></div></div>
+    <div class="hot-ann" id="hot-ann" hidden role="status"><b>📢 ANNOUNCEMENT</b><span id="hot-ann-t"></span></div>
+    <div class="hot-tabs" id="hot-tabs" role="tablist" aria-label="Hotline sections">
+      <button role="tab" data-htab="phone" class="active" aria-selected="true"><i aria-hidden="true">☎</i><span>Phone</span></button><button role="tab" data-htab="chat" aria-selected="false"><i aria-hidden="true">💬</i><span>CINCObot</span></button><button role="tab" data-htab="esc" aria-selected="false"><i aria-hidden="true">⬆</i><span>Escalate</span></button><button role="tab" data-htab="claims" aria-selected="false"><i aria-hidden="true">🧾</i><span>Claims</span></button><button role="tab" data-htab="survey" aria-selected="false"><i aria-hidden="true">★</i><span>Survey</span></button>
     </div>
-    <div class="hot-viz"><canvas id="hot-viz" aria-label="Hold music visualiser"></canvas><div class="hot-now mono"><span class="eq-dot"></span>NOW PLAYING: <span id="hot-track">Gary's Theme (Smooth Hold Mix)</span></div></div>
-    <div class="hot-pad" id="hot-pad" role="group" aria-label="Phone keypad"></div>
-    <div class="btn-row"><button class="btn danger" id="hot-hangup">Hang Up</button></div>
-    <p class="promo-fine tiny">Parody. No number is dialled, nothing is recorded and nobody is coming. Calls may be monitored for comedy purposes.</p>
+    <div class="hot-pane" data-pane="phone">
+      <div class="hot-lcd" id="hot-lcd" aria-live="polite"></div>
+      <div class="hot-crumb mono">PATH: <span id="hot-crumb">main</span></div>
+      <div class="hot-queue">
+        <div class="hq-k mono">YOUR POSITION IN THE QUEUE</div>
+        <div class="hq-n" id="hot-queue">7</div>
+        <div class="hq-msg" id="hot-msg">Your call is important to us. Relatively speaking.</div>
+      </div>
+      <div class="hot-dj">
+        <div class="hot-viz"><canvas id="hot-viz" aria-label="Hold music visualiser"></canvas><div class="hot-now mono"><span class="eq-dot"></span><span class="hn-k">DJ GARY:</span> <span id="hot-track">Gary's Theme</span></div></div>
+        <div class="dj-row"><span class="dj-q mono"><span id="hot-q">★★★★★</span> <small id="hot-djq">Audiophile</small></span><button class="btn ghost sm" id="hot-skip" title="Skip track (makes it worse)">Skip ⏭</button></div>
+        <div class="dj-msg" id="hot-djmsg"></div>
+      </div>
+      <div class="hot-pad" id="hot-pad" role="group" aria-label="Phone keypad"></div>
+      <div class="btn-row wrap"><button class="btn ghost" id="hot-cb">Request callback</button><button class="btn danger" id="hot-hangup">Hang Up</button></div>
+      <div class="hot-cb-state" id="hot-cb-state">Callbacks are available. Calls are not.</div>
+    </div>
+    <div class="hot-pane" data-pane="chat" hidden>
+      <div class="hot-chat" id="hot-chat" aria-live="polite"></div>
+      <div class="chips" id="hot-chat-chips"><button type="button">Talk to a human</button><button type="button">I want a refund</button><button type="button">My product is broken</button><button type="button">Cancel my account</button><button type="button">Is Gerald real?</button></div>
+      <form class="hot-chat-f" id="hot-chat-f" autocomplete="off"><input id="hot-chat-q" maxlength="160" placeholder="Type to CINCObot…" aria-label="Message CINCObot"><button class="btn primary sm" type="submit">Send</button></form>
+    </div>
+    <div class="hot-pane" data-pane="esc" hidden>
+      <p class="hot-p">Not happy? Climb the CINCO escalation ladder. Each rung is staffed by someone more senior and less helpful.</p>
+      <ol class="hot-ladder" id="hot-ladder"></ol>
+      <div class="esc-bar"><i id="hot-esc-bar"></i></div>
+      <div class="hot-out" id="hot-esc-out">Ready to escalate. Emotionally, at least.</div>
+      <div class="btn-row"><button class="btn primary" id="hot-escalate">Escalate to Supervisor</button></div>
+    </div>
+    <div class="hot-pane" data-pane="claims" hidden>
+      <div class="hot-sec-h"><b>Support tickets</b><button class="btn ghost sm" id="hot-ticket">New ticket</button></div>
+      <ul class="hot-tickets" id="hot-tickets"></ul>
+      <form class="hot-claim" id="hot-claim" autocomplete="off">
+        <div class="hot-sec-h"><b>Warranty claim</b><small class="mono">FORM W-404</small></div>
+        <label>Product<select name="prod"></select></label>
+        <label>What went wrong?<input name="why" maxlength="120" placeholder="e.g. The toast fell upwards"></label>
+        <div class="hc-2"><label>Purchase date<input type="date" name="date"></label>
+        <label>Proof of purchase<select name="proof"><option value="receipt">Receipt</option><option value="vibes">Vibes</option><option value="drawing">A drawing of the receipt</option><option value="witness">A witness (Gary)</option></select></label></div>
+        <label class="check"><input type="checkbox" name="read"> I have read all 912 pages of the warranty</label>
+        <button class="btn primary" type="submit">Submit claim</button>
+      </form>
+      <div class="hot-claim-out" id="hot-claim-out" hidden></div>
+    </div>
+    <div class="hot-pane" data-pane="survey" hidden>
+      <p class="hot-p">Before you go, please rate your experience. Your honest feedback will be ignored with care.</p>
+      <div class="hot-survey" id="hot-survey"></div>
+      <div class="btn-row"><button class="btn primary" id="hot-sv-go">Submit survey</button></div>
+      <div class="hot-out" id="hot-sv-out" hidden></div>
+    </div>
+    <div class="hot-jv" id="hot-jv"><span class="hj-k mono">JARVIS</span><span id="hot-jv-t">Standing by to judge, Sir.</span></div>
+    <p class="promo-fine tiny">Parody. No number is dialled, nothing is recorded, nothing is sold and nobody is coming. Calls may be monitored for comedy purposes.</p>
   </div>
 </div>
 
@@ -836,27 +1029,32 @@
 <!-- Voice pill -->
 <div class="voice-pill" id="voice-pill" aria-live="polite" hidden><i class="vp-bars"><b></b><b></b><b></b><b></b></i><span id="voice-text">Listening…</span></div>
 <!-- Update pill -->
-<div class="update-pill glass" id="update-pill" hidden><span>✦ Scanner updated to v10</span><button class="btn primary sm" id="update-reload">Reload</button></div>
+<div class="update-pill glass" id="update-pill" hidden><span>✦ Scanner updated to v11</span><button class="btn primary sm" id="update-reload">Reload</button></div>
 
 <canvas id="fx-canvas" aria-hidden="true"></canvas>
+<div id="fps-hud" hidden title="Frame rate (tap for quality settings)"><b>60</b><span class="fh-t"><span class="fh-ms">16.7ms</span><span class="fh-tier">Auto</span></span><canvas width="120" height="44" aria-hidden="true"></canvas></div>
 <div class="toasts" id="toasts" aria-live="polite"></div>
 
-<script src="js/util.js?v=10.0.0"></script>
-<script src="js/audio.js?v=10.0.0"></script>
-<script src="js/background.js?v=10.0.0"></script>
-<script src="js/sensors.js?v=10.0.0"></script>
-<script src="js/jarvis.js?v=10.0.0"></script>
-<script src="js/camera.js?v=10.0.0"></script>
-<script src="js/modules.js?v=10.0.0"></script>
-<script src="js/light.js?v=10.0.0"></script>
-<script src="js/cinco.js?v=10.0.0"></script>
-<script src="js/optics.js?v=10.0.0"></script>
-<script src="js/detect.js?v=10.0.0"></script>
-<script src="js/sky.js?v=10.0.0"></script>
-<script src="js/hotline.js?v=10.0.0"></script>
-<script src="js/badges.js?v=10.0.0"></script>
-<script src="js/voice.js?v=10.0.0"></script>
-<script src="js/tools.js?v=10.0.0"></script>
-<script src="js/app.js?v=10.0.0"></script>
+<script src="js/util.js?v=11.0.0"></script>
+<script src="js/perf.js?v=11.0.0"></script>
+<script src="js/audio.js?v=11.0.0"></script>
+<script src="js/background.js?v=11.0.0"></script>
+<script src="js/sensors.js?v=11.0.0"></script>
+<script src="js/jarvis.js?v=11.0.0"></script>
+<script src="js/camera.js?v=11.0.0"></script>
+<script src="js/modules.js?v=11.0.0"></script>
+<script src="js/light.js?v=11.0.0"></script>
+<script src="js/cinco.js?v=11.0.0"></script>
+<script src="js/optics.js?v=11.0.0"></script>
+<script src="js/detect.js?v=11.0.0"></script>
+<script src="js/sky.js?v=11.0.0"></script>
+<script src="js/hotline.js?v=11.0.0"></script>
+<script src="js/badges.js?v=11.0.0"></script>
+<script src="js/brain.js?v=11.0.0"></script>
+<script src="js/voice.js?v=11.0.0"></script>
+<script src="js/console.js?v=11.0.0"></script>
+<script src="js/extras.js?v=11.0.0"></script>
+<script src="js/tools.js?v=11.0.0"></script>
+<script src="js/app.js?v=11.0.0"></script>
 </body>
 </html>

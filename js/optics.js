@@ -22,14 +22,15 @@
 
   // =================== AR OVERLAY ===================
   const AR = (mods.ar = { mode: 'bright', locked: false, ladder: true, tgt: { x: 0.5, y: 0.5, w: 0.2, h: 0.2, conf: 0 }, id: 1, fps: 60 });
-  let arSmall, arCtx, arPrev = null, arN = 0, arLockT = 0, arAcq = 0, arLum = null, arFrameT = 0;
+  let arBuf = null, arGoal = null, arSmall, arCtx, arPrev = null, arN = 0, arLockT = 0, arAcq = 0, arLum = null, arFrameT = 0;
   const SW = 64;
   function arTrack(w, h) {
     const SH = Math.max(8, Math.round(SW * h / w));
     if (arSmall.width !== SW || arSmall.height !== SH) { arSmall.width = SW; arSmall.height = SH; arPrev = null; }
     if (!NV.cam.drawFeed(arCtx, SW, SH)) return;
     const d = arCtx.getImageData(0, 0, SW, SH).data, n = SW * SH;
-    const lum = new Float32Array(n), sc = new Float32Array(n); let mean = 0;
+    if (!arBuf || arBuf.n !== n) arBuf = { n, lum: new Float32Array(n), prev: new Float32Array(n), sc: new Float32Array(n), tmp: new Float32Array(n), bl: new Float32Array(n) };
+    const lum = arBuf.lum, sc = arBuf.sc; let mean = 0;
     for (let i = 0, j = 0; j < n; i += 4, j++) { lum[j] = 0.2126 * d[i] + 0.7152 * d[i + 1] + 0.0722 * d[i + 2]; mean += lum[j]; }
     mean /= n;
     for (let j = 0, i = 0; j < n; j++, i += 4) {
@@ -37,9 +38,9 @@
       else if (AR.mode === 'salient') { const mx = Math.max(d[i], d[i + 1], d[i + 2]), mn = Math.min(d[i], d[i + 1], d[i + 2]); sc[j] = Math.abs(lum[j] - mean) * 0.8 + (mx - mn) * 0.7; }
       else sc[j] = arPrev ? Math.abs(lum[j] - arPrev[j]) * 3 : 0;
     }
-    arPrev = lum; arLum = mean / 255;
+    arBuf.lum = arBuf.prev; arBuf.prev = lum; arPrev = lum; arLum = mean / 255;
     // 5x5 box blur via separable passes
-    const tmp = new Float32Array(n), bl = new Float32Array(n), R = 2;
+    const tmp = arBuf.tmp, bl = arBuf.bl, R = 2;
     for (let y = 0; y < SH; y++) for (let x = 0; x < SW; x++) { let s = 0, c = 0; for (let k = -R; k <= R; k++) { const xx = x + k; if (xx >= 0 && xx < SW) { s += sc[y * SW + xx]; c++; } } tmp[y * SW + x] = s / c; }
     for (let y = 0; y < SH; y++) for (let x = 0; x < SW; x++) { let s = 0, c = 0; for (let k = -R; k <= R; k++) { const yy = y + k; if (yy >= 0 && yy < SH) { s += tmp[yy * SW + x]; c++; } } bl[y * SW + x] = s / c; }
     let x0 = 0, x1 = SW, y0 = 0, y1 = SH;
@@ -53,7 +54,7 @@
     const conf = NV.clamp((best - avg) / (AR.mode === 'motion' ? 40 : 90), 0, 1);
     const T = AR.tgt, k = AR.mode === 'motion' ? 0.18 : 0.28;
     const nx = (minx + maxx + 1) / 2 / SW, ny = (miny + maxy + 1) / 2 / SH, nw = NV.clamp((maxx - minx + 3) / SW, 0.08, 0.7), nh = NV.clamp((maxy - miny + 3) / SH, 0.08, 0.7);
-    if (conf > 0.12 || AR.locked) { T.x = NV.lerp(T.x, nx, k); T.y = NV.lerp(T.y, ny, k); T.w = NV.lerp(T.w, nw, 0.15); T.h = NV.lerp(T.h, nh, 0.15); }
+    arGoal = conf > 0.12 || AR.locked ? { x: nx, y: ny, w: nw, h: nh, k } : null; // brackets glide towards this every frame (see AR.frame)
     const was = T.conf; T.conf = NV.lerp(T.conf, conf, 0.2);
     if (was < 0.35 && T.conf >= 0.35 && performance.now() - arAcq > 2500) { arAcq = performance.now(); AR.id = 1 + ((AR.id) % 99); NV.audio.tick(1.3); }
   }
@@ -113,7 +114,8 @@
     const f = NV.fit($('#ar-canvas')); if (!f) return; const { x, w, h } = f;
     AR.fps = NV.lerp(AR.fps, 1000 / Math.max(1, dt || 16), 0.05);
     if (!NV.cam.active() || !NV.cam.drawFeed(x, w, h)) { idleFeed(x, w, h, t, 'AR HUD STANDBY'); arHud(x, w, h, t); return; }
-    if (arN++ % 2 === 0) arTrack(w, h);
+    if (t - (AR._trT || 0) > 62) { AR._trT = t; arTrack(w, h); } // ~15 Hz tracking; drawing stays at display rate
+    if (arGoal) { const T = AR.tgt, a = 1 - Math.pow(1 - arGoal.k * 0.55, Math.min(dt || 16, 50) / 16.7), b = 1 - Math.pow(0.92, Math.min(dt || 16, 50) / 16.7); T.x = NV.lerp(T.x, arGoal.x, a); T.y = NV.lerp(T.y, arGoal.y, a); T.w = NV.lerp(T.w, arGoal.w, b); T.h = NV.lerp(T.h, arGoal.h, b); }
     arHud(x, w, h, t);
     if (t - arFrameT > 250) { arFrameT = t; NV.text('#ar-tgt', `TGT-${NV.pad(AR.id)}`); NV.text('#ar-conf', Math.round(AR.tgt.conf * 100) + '%'); NV.text('#ar-brg', NV.pad(Math.round(bearing()), 3) + '°'); NV.text('#ar-rng', range().toFixed(1) + ' m'); const b = $('#ar-badge'); const s = AR.locked ? 'LOCKED' : AR.tgt.conf > 0.35 ? 'TRACKING' : 'ACQUIRING'; if (b.textContent !== s) { b.textContent = s; b.className = 'badge ' + (AR.locked ? 'live' : 'warn'); } }
   };
@@ -163,11 +165,18 @@
   const hslHex = (h, s, l) => NV.hslHex(((h % 360) + 360) % 360, s * 100, l * 100);
   const CL = (mods.color = { pt: { x: 0.5, y: 0.5 }, locked: false, rgb: null, taps: 0, lastS: 0 });
   let colCv;
-  function sampleAt(f) {
-    const { x, w, h, dpr } = f, px = Math.round(CL.pt.x * w * dpr), py = Math.round(CL.pt.y * h * dpr), r = Math.max(2, Math.round(3 * dpr));
-    const d = x.getImageData(NV.clamp(px - r, 0, colCv.width - 2 * r - 1), NV.clamp(py - r, 0, colCv.height - 2 * r - 1), 2 * r + 1, 2 * r + 1).data;
+  let smp = null, smpX = null;
+  function sampleAt(f, force) {
+    const { w, h } = f, SWc = 160, SHc = Math.max(8, Math.round(SWc * h / w));
+    if (!smp) { smp = document.createElement('canvas'); smpX = smp.getContext('2d', { willReadFrequently: true }); }
+    if (smp.width !== SWc || smp.height !== SHc) { smp.width = SWc; smp.height = SHc; }
+    if (!NV.cam.drawFeed(smpX, SWc, SHc)) return;
+    const px = Math.round(CL.pt.x * SWc), py = Math.round(CL.pt.y * SHc);
+    const d = smpX.getImageData(NV.clamp(px - 1, 0, SWc - 3), NV.clamp(py - 1, 0, SHc - 3), 3, 3).data;
     let R = 0, G = 0, B = 0, n = 0; for (let i = 0; i < d.length; i += 4) { R += d[i]; G += d[i + 1]; B += d[i + 2]; n++; }
-    CL.rgb = [R / n, G / n, B / n]; renderColour();
+    const prev = CL.rgb, next = [R / n, G / n, B / n]; CL.rgb = next;
+    if (force || !prev || Math.max(Math.abs(prev[0] - next[0]), Math.abs(prev[1] - next[1]), Math.abs(prev[2] - next[2])) >= 2.5) renderColour(); // skip DOM churn for sensor noise
+    else CL.rgb = prev;
   }
   function renderColour() {
     const rgb = CL.rgb.map(Math.round), hex = NV.rgbToHex(...rgb).toUpperCase(), [h, s, l] = NV.cam.rgb2hsl(...rgb), near = nearest(rgb);
@@ -185,14 +194,21 @@
   function renderSaved() { const list = NV.store.get('swatches', []); $('#col-saved').innerHTML = list.length ? list.map((c) => `<button data-hex="${c}" style="--c:${c}" title="Copy ${c}"><i></i><span class="mono">${c}</span></button>`).join('') : '<span class="empty">Saved swatches appear here.</span>'; }
   CL.frame = (t) => {
     const f = NV.fit(colCv); if (!f) return; const { x, w, h } = f, c = NV.colors;
-    if (!NV.cam.active() || !NV.cam.drawFeed(x, w, h)) { idleFeed(x, w, h, t, 'COLOUR LAB STANDBY'); return; }
-    if (!CL.locked && t - CL.lastS > 140) { CL.lastS = t; sampleAt(f); }
+    if (!NV.cam.active()) { idleFeed(x, w, h, t, 'COLOUR LAB STANDBY'); CL._seq = -1; return; }
+    if (!CL.locked && t - CL.lastS > 140) { const force = CL.lastS === 0; CL.lastS = t; if (NV.cam.source()) sampleAt(f, force); }
+    // nothing animates here: repaint only when the camera delivers a new frame or the sample/marker changes
+    NV.cam.source(); // decodes a new camera frame if one has arrived (bumps cam.seq)
+    const key = `${NV.cam.seq}|${CL.pt.x}|${CL.pt.y}|${CL.locked}|${CL.rgb}|${w}|${h}|${NV.colors.v}`; if (key === CL._key && NV.cam.seq != null) return; CL._key = key;
+    if (!NV.cam.drawFeed(x, w, h)) { idleFeed(x, w, h, t, 'COLOUR LAB STANDBY'); return; }
     const px = CL.pt.x * w, py = CL.pt.y * h;
     // loupe: magnified pixels around the sample point
     const lr = Math.min(56, w * 0.14), lx = px + (px > w - lr * 2.6 ? -lr * 1.6 : lr * 1.6), ly = NV.clamp(py - lr * 1.2, lr + 6, h - lr - 6), dpr = f.dpr;
     x.save(); x.beginPath(); x.arc(lx, ly, lr, 0, TAU); x.clip(); x.imageSmoothingEnabled = false;
-    x.setTransform(1, 0, 0, 1, 0, 0); const sz = 14 * dpr; x.drawImage(colCv, px * dpr - sz / 2, py * dpr - sz / 2, sz, sz, (lx - lr) * dpr, (ly - lr) * dpr, lr * 2 * dpr, lr * 2 * dpr); x.setTransform(dpr, 0, 0, dpr, 0, 0);
-    x.strokeStyle = 'rgba(255,255,255,.35)'; x.lineWidth = 1; const cell = lr * 2 / 14; for (let i = -7; i <= 7; i++) { x.beginPath(); x.moveTo(lx + i * cell, ly - lr); x.lineTo(lx + i * cell, ly + lr); x.moveTo(lx - lr, ly + i * cell); x.lineTo(lx + lr, ly + i * cell); x.stroke(); }
+    const si = NV.cam.source(); if (si) { // magnify straight from the camera frame (drawing a canvas onto itself forces a full copy)
+      const [sx0, sy0, cw0, ch0] = NV.cam.crop(si.sw, si.sh, w, h, 1), kx = cw0 / w, ky = ch0 / h, mir = NV.cam.mirrored(), qx = mir ? w - px : px;
+      x.save(); if (mir) { x.translate(lx * 2, 0); x.scale(-1, 1); }
+      x.drawImage(si.src, sx0 + qx * kx - 7 * kx, sy0 + py * ky - 7 * ky, 14 * kx, 14 * ky, lx - lr, ly - lr, lr * 2, lr * 2); x.restore(); }
+    x.strokeStyle = 'rgba(255,255,255,.35)'; x.lineWidth = 1; const cell = lr * 2 / 14; x.beginPath(); for (let i = -7; i <= 7; i++) { x.moveTo(lx + i * cell, ly - lr); x.lineTo(lx + i * cell, ly + lr); x.moveTo(lx - lr, ly + i * cell); x.lineTo(lx + lr, ly + i * cell); } x.stroke();
     x.restore();
     x.strokeStyle = '#fff'; x.lineWidth = 2; x.shadowColor = c.primary; x.shadowBlur = 12; x.beginPath(); x.arc(lx, ly, lr, 0, TAU); x.stroke(); x.shadowBlur = 0;
     x.strokeStyle = '#fff'; x.lineWidth = 1.5; x.strokeRect(lx - cell / 2, ly - cell / 2, cell, cell);
@@ -205,7 +221,7 @@
   };
   CL.primary = () => $('#col-save').click();
   function initColour() {
-    colCv = $('#col-canvas'); colCv._ctx = colCv.getContext('2d', { willReadFrequently: true });
+    colCv = $('#col-canvas');
     colCv.addEventListener('pointerdown', (e) => {
       if (!NV.cam.active()) return; const r = colCv.getBoundingClientRect(); CL.pt = { x: NV.clamp((e.clientX - r.left) / r.width, 0.01, 0.99), y: NV.clamp((e.clientY - r.top) / r.height, 0.01, 0.99) };
       CL.lastS = 0; if (CL.locked) { CL.locked = false; $('#col-lock').setAttribute('aria-pressed', false); }

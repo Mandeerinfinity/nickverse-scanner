@@ -25,6 +25,13 @@
     log: '<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/>',
     timer: '<circle cx="12" cy="14" r="7"/><path d="M12 14v-4M10 3h4M12 3v4M18 7l1.5-1.5"/>',
     badges: '<circle cx="12" cy="14.5" r="5.5"/><path d="M8.6 10L6 3h4l2 4 2-4h4l-2.6 7"/><path d="M12 12.3l.8 1.6 1.8.3-1.3 1.2.3 1.8-1.6-.8-1.6.8.3-1.8-1.3-1.2 1.8-.3z"/>',
+    jarvis: '<circle cx="12" cy="12" r="9"/><path d="M12 7.2l4.1 2.4v4.8L12 16.8l-4.1-2.4V9.6z"/><circle cx="12" cy="12" r="1.4"/>',
+    sound: '<path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/>',
+    clap: '<path d="M7 13l5-7a1.6 1.6 0 0 1 2.6 1.8L12 11.5l4-4.5a1.6 1.6 0 0 1 2.4 2.1L14 14l-3 4.5a4 4 0 0 1-6-.5z"/><path d="M4 5l1.5 1.5M8 3v2M2 9h2"/>',
+    ghost: '<path d="M6 20V10a6 6 0 0 1 12 0v10l-2-1.5-2 1.5-2-1.5-2 1.5-2-1.5z"/><circle cx="10" cy="10.5" r="1"/><circle cx="14" cy="10.5" r="1"/>',
+    speed: '<path d="M4 17a8 8 0 1 1 16 0"/><path d="M12 17l4-5"/><path d="M6.5 12.5l1 .6M12 7.5v1.2M17.5 12.5l-1 .6"/>',
+    mission: '<path d="M12 3c3 2 4.5 5.5 4.5 9L14 15h-4l-2.5-3C7.5 8.5 9 5 12 3z"/><circle cx="12" cy="9.5" r="1.6"/><path d="M10 15l-1.5 4L12 17.5l3.5 1.5L14 15M7.5 12L5 14.5l2.5.5M16.5 12l2.5 2.5-2.5.5"/>',
+    brief: '<rect x="4" y="4" width="16" height="16" rx="2"/><path d="M4 9h16M8 13h8M8 16h5"/>',
     optics: '<path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
     sensors: '<circle cx="12" cy="12" r="2.5"/><path d="M7.8 7.8a6 6 0 0 0 0 8.4M16.2 7.8a6 6 0 0 1 0 8.4M5 5a10 10 0 0 0 0 14M19 5a10 10 0 0 1 0 14"/>',
     environ: '<path d="M12 3c3 4 6 7.2 6 11a6 6 0 0 1-12 0c0-3.8 3-7 6-11z"/><path d="M9 14.5a3 3 0 0 0 3 3"/>',
@@ -49,19 +56,26 @@
     { id: 'seismo', name: 'Seismograph', short: 'Seismo', cat: 'sensors', desc: 'Vibration trace on the CINCO-Richter scale', alias: ['seismograph', 'earthquake', 'vibration', 'quake'] },
     { id: 'metal', name: 'Metal Detector', short: 'Metal', cat: 'sensors', desc: 'Magnetometer field strength with beeps', alias: ['metal', 'magnet', 'detector', 'magnetometer'] },
     { id: 'heart', name: 'Pulse Estimator', short: 'Pulse', cat: 'sensors', desc: 'Fingertip camera pulse (entertainment)', alias: ['heart', 'pulse', 'heart rate', 'bpm'] },
+    { id: 'ghost', name: 'Paranormal Detector', short: 'Ghosts', cat: 'sensors', desc: 'EMF meter and spirit box (entirely fake)', alias: ['ghost', 'emf', 'paranormal', 'spirit box', 'haunted'] },
+    { id: 'speed', name: 'GPS Speedometer', short: 'Speed', cat: 'sensors', desc: 'Speed, trip meter, altitude', alias: ['speed', 'gps', 'speedometer', 'trip', 'odometer'] },
     { id: 'weather', name: 'Weather & Sky', short: 'Sky', cat: 'environ', desc: 'Forecast, sun, moon, planets and stars', alias: ['weather', 'sky', 'stars', 'moon', 'forecast'] },
     { id: 'audio', name: 'Acoustic Analyser', short: 'Audio', cat: 'environ', key: '4', desc: 'dB meter, spectrum and spectrogram', alias: ['sound', 'decibel', 'microphone', 'audio'] },
     { id: 'light', name: 'Photon Suite', short: 'Light', cat: 'environ', key: '6', desc: 'Torch, strobe, Morse and light meter', alias: ['torch', 'flashlight', 'morse', 'light'] },
+    { id: 'sound', name: 'Soundscape', short: 'Sounds', cat: 'environ', desc: 'Ambient soundscapes and a sound board', alias: ['soundboard', 'sound board', 'soundscape', 'ambience', 'sleep sounds', 'rain'] },
+    { id: 'clap', name: 'Clap Switch', short: 'Clap', cat: 'environ', desc: 'Clap twice or three times to trigger actions', alias: ['clap', 'clapper', 'clap switch'] },
+    { id: 'jarvis', name: 'JARVIS Console', short: 'JARVIS', cat: 'tactical', desc: 'Chat by text or voice, reminders and memory', alias: ['jarvis', 'chat', 'console', 'assistant', 'ai'] },
     { id: 'threat', name: 'Threat Assessment', short: 'Threat', cat: 'tactical', key: '5', desc: 'Threat index and contacts', alias: ['threat', 'danger'] },
     { id: 'radar', name: 'Sonar Sweep', short: 'Radar', cat: 'tactical', key: '7', desc: 'Sweep radar with fictional contacts', alias: ['radar', 'sonar'] },
     { id: 'guard', name: 'Perimeter Guard', short: 'Guard', cat: 'tactical', desc: 'Motion alarm with hold-to-disarm', alias: ['perimeter', 'guard', 'alarm', 'security'] },
+    { id: 'mission', name: 'Mission Planner', short: 'Mission', cat: 'tactical', desc: 'Checklist with a launch countdown', alias: ['mission', 'checklist', 'countdown', 'planner'] },
+    { id: 'brief', name: 'Daily Briefing', short: 'Brief', cat: 'records', desc: 'Weather, moon, battery and reminders at a glance', alias: ['briefing', 'daily', 'dashboard', 'today'] },
     { id: 'system', name: 'System Diagnostics', short: 'System', cat: 'records', key: '8', desc: 'Battery, network, FPS, capabilities', alias: ['system', 'diagnostics', 'battery'] },
     { id: 'log', name: 'Scan Log', short: 'Log', cat: 'records', key: '9', desc: 'Saved scans and events', alias: ['log', 'history'] },
     { id: 'timer', name: 'Scan Timer', short: 'Timer', cat: 'records', key: '0', desc: 'Stopwatch and timed auto-scan', alias: ['timer', 'stopwatch'] },
     { id: 'badges', name: 'Achievements', short: 'Badges', cat: 'records', desc: 'Badges earned for using features', alias: ['achievements', 'badges', 'trophies'] }
   ];
   const byId = (id) => TOOLS.find((t) => t.id === id);
-  const DEFAULT_FAVS = ['scan', 'weather', 'radar', 'guard'];
+  const DEFAULT_FAVS = ['scan', 'jarvis', 'weather', 'radar'];
   const T = (NV.tools = { list: TOOLS, cats: CATS, byId, active: null, cat: 'optics', favs: (NV.store.get('favs', DEFAULT_FAVS) || DEFAULT_FAVS).filter(byId).slice(0, 4) });
   NV.mods = NV.mods || {};
   const visited = new Set(NV.store.get('visited', []));
@@ -104,7 +118,7 @@
   // ---------- Showing tools ----------
   let transitioning = false;
   function swap(name) {
-    NV.$$('.module').forEach((p) => p.classList.toggle('active', p.dataset.mod === name));
+    NV.$$('.module').forEach((p) => { const on = p.dataset.mod === name; p.classList.toggle('active', on); p.classList.remove('sweep'); if (on) { if (!p._sw) { p._sw = document.createElement('i'); p._sw.className = 'holo-sweep'; p._sw.setAttribute('aria-hidden', 'true'); p.appendChild(p._sw); } void p.offsetWidth; p.classList.add('sweep'); clearTimeout(p._swT); p._swT = setTimeout(() => p.classList.remove('sweep'), 1400); } });
   }
   NV.showTab = (name, sound = true) => {
     if (!byId(name)) name = 'scan';

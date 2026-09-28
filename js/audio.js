@@ -174,6 +174,14 @@
       loops.set(slot, { kind, timer: setInterval(run, period) }); run();
     },
     stopLoop(slot = 'main') { const l = loops.get(slot); if (l) { clearInterval(l.timer); loops.delete(slot); } },
-    loopKind(slot = 'main') { const l = loops.get(slot); return l ? l.kind : null; }
+    loopKind(slot = 'main') { const l = loops.get(slot); return l ? l.kind : null; },
+    // Custom loops for the hotline DJ and soundboard: fn(t, step, synth) is called every `period` ms.
+    customLoop(slot, kind, period, fn) {
+      if (!ensure()) return; this.stopLoop(slot); let step = 0;
+      const run = () => { const l = loops.get(slot); if (!l || l.kind !== kind || !NV.settings.uisound) return; try { fn(ctx.currentTime + 0.03, step++, NV.audio.synth); } catch (e) { /* keep looping */ } };
+      loops.set(slot, { kind, timer: setInterval(run, period) }); run();
+    },
+    get synth() { if (!ensure()) return null; return { ctx, tone, noise, musicBus, sfxBus, master, verbSend, noiseBuf: () => { if (!noiseBuf) noise(ctx.currentTime, 0.01, { gain: 0.0001 }); return noiseBuf; } }; },
+    canPlay() { return !!(NV.settings.uisound && ensure()); }
   };
 })();

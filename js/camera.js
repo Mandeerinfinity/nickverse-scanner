@@ -5,6 +5,7 @@
   const C = (NV.cam = { live: false, sim: false, frozen: false, scanning: false, filter: 'normal', zoom: 1, facing: 'environment', luma: null, center: [0, 0, 0], qr: false, qrSupported: 'BarcodeDetector' in window, track: null, stream: null, torchCap: false, hwZoom: null, res: '' });
   const FILTERS = ['normal', 'night', 'thermal', 'edge'];
   const FNAME = { normal: 'NORMAL', night: 'NIGHT-VIS', thermal: 'THERMAL', edge: 'EDGE-DETECT' };
+  let noiseTile = null, noisePat = null, lastProc = -1e9, lastP = null;
   let video, cv, base, bctx, proc, pctx, det, dctx, simCv, simCtx, detector = null;
   let qrBusy = false, lastQr = 0, qrBoxes = [], lastQrVal = '', lastQrAt = 0, scanStart = 0, hist = new Array(32).fill(0), frameN = 0, lastAnalysis = null, callout = null;
   let wasLiveBeforeHide = false;
@@ -50,7 +51,7 @@
   }
 
   // ---------- Simulated feed ----------
-  function drawSim(t) {
+  function drawSim(t) { C.seq = (C.seq || 0) + 1;
     const W = 640, H = 480, x = simCtx, ts = t / 1000;
     const g = x.createLinearGradient(0, 0, 0, H); g.addColorStop(0, '#1b2a44'); g.addColorStop(0.55, '#2b3550'); g.addColorStop(0.56, '#3b2f2a'); g.addColorStop(1, '#1a1512');
     x.fillStyle = g; x.fillRect(0, 0, W, H);
@@ -70,7 +71,8 @@
     // rubber duck
     const dx = 170 + Math.sin(ts * 0.5) * 30; x.fillStyle = '#ffd23f'; x.beginPath(); x.ellipse(dx, 400, 34, 22, 0, 0, Math.PI * 2); x.fill(); x.beginPath(); x.arc(dx + 22, 372, 16, 0, Math.PI * 2); x.fill(); x.fillStyle = '#ff7a3d'; x.beginPath(); x.moveTo(dx + 36, 372); x.lineTo(dx + 50, 376); x.lineTo(dx + 36, 380); x.fill(); x.fillStyle = '#111'; x.beginPath(); x.arc(dx + 26, 368, 2.5, 0, Math.PI * 2); x.fill();
     // noise
-    const id = x.getImageData(0, 0, W, H), d = id.data; for (let i = 0; i < d.length; i += 16) { const n = (Math.random() - 0.5) * 22; d[i] += n; d[i + 1] += n; d[i + 2] += n; } x.putImageData(id, 0, 0);
+    if (!noiseTile) { noiseTile = document.createElement('canvas'); noiseTile.width = noiseTile.height = 128; const nx = noiseTile.getContext('2d'), nd = nx.createImageData(128, 128); for (let i = 0; i < nd.data.length; i += 4) { const v = Math.random() * 255; nd.data[i] = nd.data[i + 1] = nd.data[i + 2] = v; nd.data[i + 3] = Math.random() < 0.5 ? 26 : 0; } nx.putImageData(nd, 0, 0); noisePat = x.createPattern(noiseTile, 'repeat'); }
+    x.save(); x.translate(-Math.random() * 128, -Math.random() * 128); x.fillStyle = noisePat; x.globalCompositeOperation = 'overlay'; x.fillRect(0, 0, W + 128, H + 128); x.restore();
     x.font = '700 13px ShareTech, monospace'; x.fillStyle = 'rgba(255,255,255,.55)'; x.fillText('CINCO SIMULATION FEED // NOT A REAL CAMERA', 16, 24);
   }
 
@@ -86,7 +88,7 @@
       const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: facing }, width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false });
       C.stream = stream; C.track = stream.getVideoTracks()[0];
       video.srcObject = stream; try { await video.play(); } catch (e) { /* autoplay nuance */ }
-      C.live = true; C.sim = false; C.frozen = false;
+      C.live = true; C.sim = false; C.frozen = false; newFrame = true; watchFrames();
       let caps = {}; try { caps = (C.track.getCapabilities && C.track.getCapabilities()) || {}; } catch (e) { caps = {}; }
       C.hwZoom = caps.zoom && caps.zoom.max > caps.zoom.min ? caps.zoom : null; C.torchCap = !!caps.torch;
       NV.$$('.cam-start').forEach((e) => e.classList.add('gone')); setBadge('LIVE', 'live'); NV.audio.powerUp(); NV.haptic(30);
@@ -125,15 +127,28 @@
   }
 
   // ---------- Frame pipeline ----------
+  // The live video is decoded into one shared frame canvas once per new camera frame; every consumer
+  // (feed, analysis, AR tracker, colour lab, OCR, pulse) reads that instead of re-converting the video.
+  let frameCv = null, fctx = null, newFrame = true, lastGrab = 0, rvfc = false;
+  function watchFrames() { if (!video.requestVideoFrameCallback || rvfc) return; rvfc = true; const cb = () => { newFrame = true; if (C.live) video.requestVideoFrameCallback(cb); else rvfc = false; }; video.requestVideoFrameCallback(cb); }
+  function grab() {
+    const vw = video.videoWidth, vh = video.videoHeight, now = performance.now();
+    if (!frameCv) { frameCv = document.createElement('canvas'); fctx = frameCv.getContext('2d', { alpha: false }); }
+    const k = Math.min(1, 1280 / Math.max(vw, vh)), fw = Math.round(vw * k), fh = Math.round(vh * k);
+    const sized = frameCv.width === fw && frameCv.height === fh;
+    if (!sized) { frameCv.width = fw; frameCv.height = fh; }
+    if (!sized || (rvfc ? newFrame : now - lastGrab > 32)) { fctx.drawImage(video, 0, 0, fw, fh); newFrame = false; lastGrab = now; C.seq = (C.seq || 0) + 1; }
+    return frameCv;
+  }
   function sourceInfo() {
-    if (C.live && video.readyState >= 2 && video.videoWidth) return { src: video, sw: video.videoWidth, sh: video.videoHeight };
+    if (C.live && video.readyState >= 2 && video.videoWidth) { const f = grab(); return { src: f, sw: f.width, sh: f.height }; }
     if (C.sim) return { src: simCv, sw: 640, sh: 480 };
     return null;
   }
   function crop(sw, sh, w, h, zoom) { const sc = Math.max(w / sw, h / sh) * zoom, cw = w / sc, ch = h / sc; return [(sw - cw) / 2, (sh - ch) / 2, cw, ch]; }
 
   function processFrame(t, src, sw, sh, w, h) {
-    const pw = 320, ph = Math.max(1, Math.round(pw * h / w));
+    const pw = C.filter === 'normal' ? 160 : (NV.perf.tier >= 2 ? 320 : 240), ph = Math.max(1, Math.round(pw * h / w));
     if (proc.width !== pw || proc.height !== ph) { proc.width = pw; proc.height = ph; }
     const zoom = C.hwZoom ? 1 : C.zoom, [sx, sy, cw, ch] = crop(sw, sh, w, h, zoom);
     pctx.drawImage(src, sx, sy, cw, ch, 0, 0, pw, ph);
@@ -169,30 +184,39 @@
     return { data: d, pw, ph, filtered: false, crop: [sx, sy, cw, ch] };
   }
 
+  // Draw the live source straight onto the visible canvas (no intermediate full-resolution copy).
+  function paintFeed(x, si, p, W2, H2) {
+    x.save(); x.setTransform(1, 0, 0, 1, 0, 0);
+    if (C.live && C.facing === 'user') { x.translate(W2, 0); x.scale(-1, 1); }
+    x.imageSmoothingEnabled = true; x.imageSmoothingQuality = 'low';
+    if (p && p.filtered) x.drawImage(proc, 0, 0, W2, H2);
+    else { const [sx, sy, cw, ch] = crop(si.sw, si.sh, cv._cw || W2, cv._ch || H2, C.hwZoom ? 1 : C.zoom); x.drawImage(si.src, sx, sy, cw, ch, 0, 0, W2, H2); }
+    x.restore();
+  }
   C.frame = function (t, display = true) {
     if (!C.active()) return;
-    if (C.sim && (!C.frozen || !display)) drawSim(t);
+    if (C.sim && (!C.frozen || !display) && (!display || t - (C._simT || 0) > 30)) { C._simT = t; drawSim(t); }
     const si = sourceInfo(); if (!si) return;
     if (C.live) C.res = `${si.sw}×${si.sh}`;
-    if (!display) { if (!C.frozen && frameN++ % 3 === 0) processFrame(t, si.src, si.sw, si.sh, 320, 240); return; }
+    if (!display) { if (!C.frozen && t - lastProc > 60) { lastProc = t; processFrame(t, si.src, si.sw, si.sh, 320, 240); } return; }
     const f = NV.fit(cv); if (!f) return;
-    const { w, h, dpr } = f;
-    if (base.width !== cv.width || base.height !== cv.height) { base.width = cv.width; base.height = cv.height; }
+    const { w, h, dpr } = f, x = f.x;
     if (!C.frozen) {
-      const p = processFrame(t, si.src, si.sw, si.sh, w, h);
-      bctx.save(); bctx.setTransform(1, 0, 0, 1, 0, 0);
-      if (C.live && C.facing === 'user') { bctx.translate(base.width, 0); bctx.scale(-1, 1); }
-      bctx.imageSmoothingEnabled = true; bctx.imageSmoothingQuality = 'high';
-      if (p.filtered) bctx.drawImage(proc, 0, 0, base.width, base.height);
-      else { const [sx, sy, cw, ch] = p.crop; bctx.drawImage(si.src, sx, sy, cw, ch, 0, 0, base.width, base.height); }
-      bctx.restore();
-      frameN++;
+      // analysis (histogram, centre colour, filters) at ~15 Hz, or ~30 Hz when a filter is showing; drawing stays at display rate
+      const every = C.filter !== 'normal' ? (NV.perf.tier >= 2 ? 16 : 32) : 66;
+      if (!lastP || t - lastProc >= every - 2 || lastP.filtered !== (C.filter !== 'normal')) { lastProc = t; lastP = processFrame(t, si.src, si.sw, si.sh, w, h); if (++frameN % 2 === 0) liveReadouts(); }
+      paintFeed(x, si, lastP, cv.width, cv.height);
       if (C.qr && detector && !qrBusy && t - lastQr > 350) runQr(si, w, h);
-      if (frameN % 6 === 0) liveReadouts();
-    }
-    const x = f.x; x.setTransform(1, 0, 0, 1, 0, 0); x.drawImage(base, 0, 0); x.setTransform(dpr, 0, 0, dpr, 0, 0);
+    } else { x.setTransform(1, 0, 0, 1, 0, 0); x.drawImage(base, 0, 0, cv.width, cv.height); }
+    x.setTransform(dpr, 0, 0, dpr, 0, 0);
     drawHud(x, w, h, t);
   };
+  // capture the current frame into the freeze buffer (used when a scan locks the frame)
+  function captureBase() {
+    const si = sourceInfo(); if (!si || !cv.width) return;
+    base.width = cv.width; base.height = cv.height; lastP = processFrame(performance.now(), si.src, si.sw, si.sh, cv._cw || cv.width, cv._ch || cv.height);
+    paintFeed(bctx, si, lastP, base.width, base.height);
+  }
 
   function runQr(si, w, h) {
     qrBusy = true; lastQr = performance.now();
@@ -297,7 +321,7 @@
   }
 
   // ---------- Scan ----------
-  function thumb() { const tc = document.createElement('canvas'); const tw = 240, th = Math.round(tw * (base.height || 3) / (base.width || 4)); tc.width = tw; tc.height = th; try { tc.getContext('2d').drawImage(base.width ? base : proc, 0, 0, tw, th); return tc.toDataURL('image/jpeg', 0.72); } catch (e) { return null; } }
+  function thumb() { const tc = document.createElement('canvas'); const src0 = C.frozen && base.width ? base : proc, tw = 240, th = Math.round(tw * (src0.height || 3) / (src0.width || 4)); tc.width = tw; tc.height = th; try { tc.getContext('2d').drawImage(C.frozen && base.width ? base : proc, 0, 0, tw, th); return tc.toDataURL('image/jpeg', 0.72); } catch (e) { return null; } }
   function analyse() {
     const pw = proc.width, ph = proc.height, d = pctx.getImageData(0, 0, pw, ph).data;
     const bins = new Map(); let sum = 0;
@@ -318,7 +342,7 @@
     $('#cam-scan').classList.add('busy'); NV.text('#cam-scan span', 'SCANNING'); setBadge('ANALYSING', 'warn');
     NV.audio.scan(); NV.haptic([15, 60, 15, 60, 15]);
     setTimeout(() => {
-      C.frozen = true; C.scanning = false;
+      captureBase(); C.frozen = true; C.scanning = false;
       const a = analyse(); lastAnalysis = a;
       callout = { name: a.name, hex: a.hex, obj: a.fake.object };
       const fl = $('#cam-flash'); fl.classList.remove('go'); void fl.offsetWidth; fl.classList.add('go');

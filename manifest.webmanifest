@@ -1,7 +1,7 @@
 {
   "name": "NICK-VERSE Scanner",
   "short_name": "NV Scanner",
-  "description": "A handheld HUD sensor gadget for the Nick-Verse: 20 tools, AR, sky map, weather, voice commands and more. A CINCO Corporation Product (parody).",
+  "description": "A handheld HUD sensor gadget for the Nick-Verse: 27 tools, a JARVIS console, AR, sky map, weather, voice commands and more. A CINCO Corporation Product (parody).",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
@@ -37,7 +37,7 @@
       "type": "image/svg+xml"
     }
   ],
-  "version": "10.0.0",
+  "version": "11.0.0",
   "id": "./",
   "shortcuts": [
     {
@@ -49,8 +49,12 @@
       "url": "./index.html?tab=weather"
     },
     {
-      "name": "Perimeter Guard",
-      "url": "./index.html?tab=guard"
+      "name": "JARVIS Console",
+      "url": "./index.html?tab=jarvis"
+    },
+    {
+      "name": "Daily Briefing",
+      "url": "./index.html?tab=brief"
     },
     {
       "name": "Radar",

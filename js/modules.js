@@ -201,7 +201,7 @@
     let s = 0; for (let i = 0; i < tData.length; i++) s += tData[i] * tData[i];
     const rms = Math.sqrt(s / tData.length), dbfs = 20 * Math.log10(Math.max(rms, 1e-7));
     const db = NV.clamp(dbfs + NV.settings.micoffset, 0, 130);
-    M.db = NV.lerp(M.db, db, 0.25); if (M.db > M.peak) M.peak = M.db;
+    M.raw = db; M.db = NV.lerp(M.db, db, 0.25); if (M.db > M.peak) M.peak = M.db;
     energy += Math.pow(10, M.db / 10); eCount++; M.avg = 10 * Math.log10(energy / eCount);
     const sr = NV.audio.ctx.sampleRate, binHz = sr / an.fftSize; let mx = 0, mi = 0;
     for (let i = Math.floor(50 / binHz); i < Math.min(fData.length, 5000 / binHz); i++) if (fData[i] > mx) { mx = fData[i]; mi = i; }
@@ -277,7 +277,7 @@
     NV.text('#chip-threat-text', 'THREAT ' + NV.pad(T.value) + ' · ' + T.name); $('#chip-threat').classList.toggle('hot', T.value >= 60);
     $('#tmini-fill').style.width = T.value.toFixed(1) + '%'; $('#tmini-fill').style.setProperty('--tc', T.col); NV.text('#tmini-val', NV.pad(T.value)); NV.text('#tmini-lvl', T.name);
     const b = $('#threat-badge'); b.textContent = T.name; b.className = 'badge ' + (T.value >= 60 ? 'bad' : T.value >= 40 ? 'warn' : 'live');
-    if (NV.visible($('#threat-level'))) {
+    if (NV.tools.active === 'threat') {
       NV.text('#threat-level', T.name); $('#threat-level').style.setProperty('--tc', T.col); NV.text('#threat-desc', T.desc);
       $('#threat-factors').innerHTML = [['Acoustic', f.noise], ['Kinetic', f.motion], ['Darkness', f.dark], ['Anomalies', f.anomaly]].map(([k, v]) => `<div class="tf"><span>${k}</span><i><b style="width:${v.toFixed(0)}%"></b></i><span>${NV.pad(v)}</span></div>`).join('');
     }
@@ -477,6 +477,7 @@
   const ICON = { scan: '◎', qr: '▦', threat: '▲', note: '✎', audio: '♪' };
   function save() { let tries = 0; while (!NV.store.set('log', entries) && entries.length && tries++ < 40) entries.pop(); }
   LG.count = () => entries.length;
+  LG.latest = () => entries[0] || null; LG.entries = () => entries.slice();
   LG.add = (e) => { entries.unshift(Object.assign({ id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), t: Date.now() }, e)); if (entries.length > 30) entries.length = 30; save(); LG.render(); };
   LG.remove = (id) => { entries = entries.filter((e) => e.id !== id); save(); LG.render(); };
   LG.render = () => {

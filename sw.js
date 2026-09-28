@@ -1,12 +1,12 @@
 /* NICK-VERSE Scanner: offline service worker.
    Network-first for pages (so updates arrive promptly), cache-first for versioned assets.
    Cross-origin requests (Open-Meteo weather, Tesseract.js CDN) are never cached or intercepted. */
-const VERSION = '10.0.0';
-const CACHE = 'nickverse-scanner-v10';
+const VERSION = '11.0.0';
+const CACHE = 'nickverse-scanner-v11';
 const ASSETS = [
   './', './index.html', './manifest.webmanifest', './css/style.css',
-  './js/util.js', './js/audio.js', './js/background.js', './js/sensors.js', './js/jarvis.js', './js/camera.js', './js/modules.js', './js/light.js', './js/cinco.js',
-  './js/optics.js', './js/detect.js', './js/sky.js', './js/hotline.js', './js/badges.js', './js/voice.js', './js/tools.js', './js/app.js',
+  './js/util.js', './js/perf.js', './js/audio.js', './js/background.js', './js/sensors.js', './js/jarvis.js', './js/camera.js', './js/modules.js', './js/light.js', './js/cinco.js',
+  './js/optics.js', './js/detect.js', './js/sky.js', './js/hotline.js', './js/badges.js', './js/brain.js', './js/voice.js', './js/console.js', './js/extras.js', './js/tools.js', './js/app.js',
   './fonts/Orbitron-Variable.ttf', './fonts/Rajdhani-Medium.ttf', './fonts/Rajdhani-SemiBold.ttf', './fonts/ShareTechMono-Regular.ttf',
   './icons/icon.svg', './icons/icon-192.png', './icons/icon-512.png', './icons/icon-maskable-512.png'
 ];

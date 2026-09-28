@@ -42,28 +42,33 @@
 
   // ---------- Modals / drawer ----------
   let lastFocus = null;
-  NV.openModal = (id) => { const m = $('#' + id); if (!m.classList.contains('open')) { lastFocus = document.activeElement; NV.audio.open(); } m.classList.add('open'); m.setAttribute('aria-hidden', 'false'); };
+  const openSet = new Set(); NV.covered = () => openSet.size > 0;
+  NV.openModal = (id) => { const m = $('#' + id); openSet.add(id); if (!m.classList.contains('open')) { lastFocus = document.activeElement; NV.audio.open(); } m.classList.add('open'); m.setAttribute('aria-hidden', 'false'); };
   NV.closeModal = (id) => {
-    const m = $('#' + id); if (!m.classList.contains('open')) return; m.classList.remove('open'); m.setAttribute('aria-hidden', 'true'); NV.audio.close();
+    const m = $('#' + id); openSet.delete(id); if (!m.classList.contains('open')) return; m.classList.remove('open'); m.setAttribute('aria-hidden', 'true'); NV.audio.close();
     if (id === 'promo') NV.cinco.close(); if (id === 'hotline') NV.hotline.close();
     if (lastFocus && lastFocus.focus && document.contains(lastFocus)) try { lastFocus.focus({ preventScroll: true }); } catch (e) { /* ignore */ }
   };
   function toggleDrawer(force) { const d = $('#settings'); const open = force ?? !d.classList.contains('open'); if (open === d.classList.contains('open')) return; d.classList.toggle('open', open); d.setAttribute('aria-hidden', !open); open ? NV.audio.open() : NV.audio.close(); }
   function toggleFullscreen() { const doc = document, el = doc.documentElement, fs = doc.fullscreenElement || doc.webkitFullscreenElement; try { if (!fs) (el.requestFullscreen || el.webkitRequestFullscreen).call(el); else (doc.exitFullscreen || doc.webkitExitFullscreen).call(doc); } catch (e) { NV.toast('Fullscreen is not supported here.'); } }
   NV.toggleDrawer = toggleDrawer; NV.toggleFullscreen = toggleFullscreen;
+  NV.openSettings = (sec) => { toggleDrawer(true); const el = sec && $('#set-' + (sec === 'quality' ? 'perf' : sec)); if (el) setTimeout(() => el.scrollIntoView({ block: 'start', behavior: NV.reducedMotion ? 'auto' : 'smooth' }), 120); };
 
   // ---------- Settings ----------
-  const MAP = { 'set-particles': 'particles', 'set-scanlines': 'scanlines', 'set-parallax': 'parallax', 'set-uisound': 'uisound', 'set-haptics': 'haptics', 'set-speak': 'speak', 'set-commentary': 'commentary', 'set-forcesim': 'forcesim', 'set-wakelock': 'wakelock', 'set-ads': 'ads', 'set-recalls': 'recalls', 'set-hum': 'hum', 'set-reducemotion': 'reducemotion' };
+  const MAP = { 'set-fpshud': 'fpshud', 'set-quips': 'quips', 'set-wake': 'wake', 'set-particles': 'particles', 'set-scanlines': 'scanlines', 'set-parallax': 'parallax', 'set-uisound': 'uisound', 'set-haptics': 'haptics', 'set-speak': 'speak', 'set-commentary': 'commentary', 'set-forcesim': 'forcesim', 'set-wakelock': 'wakelock', 'set-ads': 'ads', 'set-recalls': 'recalls', 'set-hum': 'hum', 'set-reducemotion': 'reducemotion' };
   function bindSettings() {
-    Object.entries(MAP).forEach(([id, key]) => { const el = $('#' + id); el.checked = !!S[key]; el.addEventListener('change', () => { NV.setSetting(key, el.checked); NV.audio.click(el.checked ? 1.2 : 0.8); NV.haptic(8); }); });
+    Object.entries(MAP).forEach(([id, key]) => { const el = $('#' + id); if (!el) return; el.checked = !!S[key]; el.addEventListener('change', () => { NV.setSetting(key, el.checked); NV.audio.click(el.checked ? 1.2 : 0.8); NV.haptic(8); }); });
     ['volume', 'sfxlevel', 'musiclevel'].forEach((k) => { const el = $('#set-' + k); el.value = S[k]; NV.text('#set-' + k + '-v', String(Math.round(S[k] * 100))); el.addEventListener('input', (e) => { NV.setSetting(k, +e.target.value); NV.text('#set-' + k + '-v', String(Math.round(e.target.value * 100))); }); el.addEventListener('change', () => NV.audio.confirm()); });
     $('#set-soundtest').onclick = () => { NV.audio.bootUp(); setTimeout(() => NV.audio.badge(), 1300); };
     $('#set-micoffset').value = S.micoffset; NV.text('#set-micoffset-v', String(S.micoffset)); $('#set-micoffset').addEventListener('input', (e) => { NV.setSetting('micoffset', +e.target.value); NV.text('#set-micoffset-v', e.target.value); });
     $('#set-voice').addEventListener('change', (e) => { NV.setSetting('voice', e.target.value); NV.jarvis.refreshVoices(); NV.jarvis.speak('Voice matrix recalibrated, Sir.'); });
     $('#set-reset').onclick = () => { NV.store.del('settings'); location.reload(); };
+    const qSeg = $('#set-quality'), markQ = () => { NV.$$('button', qSeg).forEach((b) => { const on = b.dataset.q === (S.quality || 'auto'); b.classList.toggle('on', on); b.setAttribute('aria-checked', on); b.setAttribute('role', 'radio'); }); NV.text('#quality-note', (S.quality || 'auto') === 'auto' ? `Auto (now ${NV.perf.t.name}) watches the frame rate and steps effects down if frames take longer than 16.7 ms.` : `Fixed at ${NV.perf.t.name}. Auto adapts to the device instead.`); };
+    NV.$$('button', qSeg).forEach((b) => (b.onclick = () => { NV.perf.set(b.dataset.q); NV.audio.click(1.1); NV.haptic(8); markQ(); NV.toast('Graphics quality: ' + NV.perf.label(), 1800); }));
+    markQ(); NV.on('quality', markQ);
     if (NV.osReducedMotion) NV.text('#rm-note', 'Your system asks for reduced motion, so animations are already minimised.');
     NV.onSetting((k, v) => {
-      const id = Object.keys(MAP).find((i) => MAP[i] === k); if (id) $('#' + id).checked = !!v;
+      const id = Object.keys(MAP).find((i) => MAP[i] === k); if (id && $('#' + id)) $('#' + id).checked = !!v;
       if (k === 'scanlines') document.body.classList.toggle('no-scanlines', !v);
       if (k === 'uisound') $('#btn-mute').setAttribute('aria-pressed', !v);
       if (k === 'wakelock') NV.wake('setting', v);
@@ -80,7 +85,7 @@
   NV.parallax = px;
   function stepParallax() {
     if (SN.orientMode === 'live') { px.tx = NV.clamp(SN.ori.gamma / 30, -1, 1); px.ty = NV.clamp((SN.ori.beta - 40) / 30, -1, 1); }
-    const on = S.parallax && !NV.reducedMotion;
+    const on = S.parallax && !NV.reducedMotion && NV.perf.t.parallax;
     px.x = NV.lerp(px.x, on ? px.tx : 0, 0.06); px.y = NV.lerp(px.y, on ? px.ty : 0, 0.06);
     if (Math.abs(px.x - lastPX) < 0.002 && Math.abs(px.y - lastPY) < 0.002) return; lastPX = px.x; lastPY = px.y;
     if (!pxEls) pxEls = { mods: $('#modules'), glow: $('.bg-glow'), grid: $('.bg-grid') };
@@ -108,9 +113,14 @@
   let last = performance.now(), frames = 0, fpsT = last, lastRead = 0, lastSec = 0, lastLight = 0, miniRadarVis = true, visCheck = 0, slowSecs = 0;
   NV.quality = 1;
   const CAM_TOOLS = new Set(['ar', 'color', 'ocr', 'heart', 'light']); let lastCamBg = 0;
+  let frameIdx = 0, els = null;
   function loop(now) {
-    const dt = now - last; last = now;
-    const tab = NV.tools.active;
+    const dt = now - last; last = now; frameIdx++;
+    const tab = NV.tools.active, T = NV.perf.t, w0 = performance.now();
+    if (!els) els = { radar: $('#radar'), mini: $('#mini-radar'), mods: $('#modules') };
+    // Battery tier: tool canvases refresh at 30 Hz; the active tool is skipped entirely if scrolled out of view
+    const covered = NV.covered(); // a full-screen modal hides the deck: pause every deck canvas
+    const drawTool = !covered && (T.hz >= 60 || (frameIdx & 1) === 0) && NV.inView(els.mods);
     try {
       stepTheme(now); stepParallax();
       SN.tick(now); NV.motion.sample(); NV.meter.compute();
@@ -118,32 +128,33 @@
       NV.threat.tick(now); NV.radar.update(now, dt);
       NV.bg.draw(dt, now); NV.fx.draw(dt);
       NV.emit('tick', { now, dt }); // background services (guard, seismic sampling)
-      switch (tab) {
+      if (drawTool) switch (tab) {
         case 'scan': NV.cam.frame(now, true); break;
         case 'motion': NV.motion.frame(now); break;
         case 'nav': NV.nav.frame(now); break;
         case 'audio': NV.meter.frame(now); break;
         case 'threat': NV.threat.frame(now); break;
         case 'light': NV.light.frame(now); break;
-        case 'radar': NV.radar.draw($('#radar'), now, true); NV.radar.list(now); break;
+        case 'radar': NV.radar.draw(els.radar, now, true); NV.radar.list(now); break;
         case 'timer': NV.timer.frame(now); break;
         default: if (NV.mods[tab] && NV.mods[tab].frame) NV.mods[tab].frame(now, dt);
       }
       // background camera analysis (feeds lux/threat); full rate only for camera tools, throttled elsewhere to save battery
-      if (tab !== 'scan' && NV.cam.active() && (CAM_TOOLS.has(tab) || now - lastCamBg > 200)) { lastCamBg = now; NV.cam.frame(now, false); }
+      if (NV.cam.active() && (tab !== 'scan' || !drawTool) && now - lastCamBg > (CAM_TOOLS.has(tab) ? 60 : 200)) { lastCamBg = now; NV.cam.frame(now, false); }
       if (tab !== 'nav') NV.nav.dispH = NV.angLerp(NV.nav.dispH, SN.heading, 0.12);
-      if (now - visCheck > 1000) { visCheck = now; miniRadarVis = NV.visible($('#mini-radar')) && $('#mini-radar').getBoundingClientRect().bottom > 0 && $('#mini-radar').getBoundingClientRect().top < innerHeight; }
-      if (miniRadarVis) NV.radar.draw($('#mini-radar'), now, false);
-      NV.jarvis.draw(now);
+      if (now - visCheck > 1000) { visCheck = now; miniRadarVis = NV.visible(els.mini); }
+      if (!covered && miniRadarVis && NV.inView(els.mini) && (T.tier > 1 || (frameIdx & 1) === 0)) NV.radar.draw(els.mini, now, false);
+      if (!covered) NV.jarvis.draw(now, frameIdx);
       if (NV.timer.running) NV.text('#chip-timer-text', NV.fmtDuration(NV.timer.elapsed(), false));
       if (now - lastRead > 100) { lastRead = now; arrayReadouts(); NV.nav.tickReadouts(); NV.meter.tickReadouts(); NV.light.tickReadouts(); }
       if (now - lastSec > 1000) { lastSec = now; NV.status.tick(); if (tab === 'system') NV.status.caps(); }
     } catch (e) { if (!loop._warned) { loop._warned = true; setTimeout(() => { throw e; }); } }
     frames++;
+    NV.perf.frame(dt, performance.now() - w0, now);
     if (now - fpsT >= 1000) {
       const fps = frames * 1000 / (now - fpsT); NV.status.fps(fps); frames = 0; fpsT = now;
       // adaptive quality: lighten the ambient layer if we can't hold ~45 fps
-      if (!document.hidden) { slowSecs = fps < 42 ? slowSecs + 1 : Math.max(0, slowSecs - 1); const q = slowSecs >= 3 ? 0.5 : slowSecs === 0 ? 1 : NV.quality; if (q !== NV.quality) { NV.quality = q; NV.bg.setQuality && NV.bg.setQuality(q); } }
+      void slowSecs; NV.quality = NV.perf.tier >= 2 ? 1 : 0.5;
     }
     requestAnimationFrame(loop);
   }
@@ -181,7 +192,7 @@
     setTimeout(() => NV.jarvis.speak('Diagnostics complete, Sir. Every system is either working, simulated, or pretending convincingly. The sarcasm module is, regrettably, flawless.', { tag: 'DIAG' }), 350 * steps.length + 300);
   }
   function runProto(p) {
-    NV.closeModal('protocols');
+    NV.closeModal('protocols'); NV.emit('proto', p);
     if (p === 'standard') { setParty(false); setStealth(false); NV.threat.setRed(false); NV.jarvis.say('standard'); }
     else if (p === 'stealth') setStealth(!override.stealth);
     else if (p === 'party') setParty(!party);
@@ -265,16 +276,20 @@
     NV.buildTicks($('#boot-ticks'), 72, 6, 99, 96, 93);
     const grid = $('#boot-grid'); grid.innerHTML = NV.tools.list.map((t) => `<i title="${t.short}">${NV.ic(NV.icons[t.id])}</i>`).join('');
     const tiles = NV.$$('i', grid);
-    const lines = ['Initialising NICK-VERSE sensor kernel', 'Polishing the optical array', 'Calibrating gyroscopic whatsits', 'Aligning the sky dome with the actual sky', 'Teaching the magnetometer to find spoons', 'Loading J.A.R.V.I.S. wit subroutines', 'Consulting CINCO Corporation legal (again)', 'Mark X systems ready'];
+    const lines = ['Initialising NICK-VERSE sensor kernel', 'Polishing the optical array', 'Calibrating gyroscopic whatsits', 'Aligning the sky dome with the actual sky', 'Teaching the magnetometer to find spoons', 'Loading J.A.R.V.I.S. wit subroutines', 'Warming up the console and its dry wit', 'Tuning the spirit box (for comedy purposes)', 'Putting DJ Gary on hold', 'Consulting CINCO Corporation legal (again)', 'Mark XI systems ready'];
+    const phases = ['PHASE 1 / 3 · KERNEL', 'PHASE 2 / 3 · SENSORS', 'PHASE 3 / 3 · PERSONALITY'];
+    // title decode: letters resolve from noise (text only, ~0.8 s)
+    const tNodes = [$('.boot-title').firstChild, $('.boot-title span')].filter(Boolean), finals = tNodes.map((n) => n.textContent), GL = '#%&@$*+=/<>01';
+    let dec = 0; const decT = setInterval(() => { dec++; tNodes.forEach((n, k) => { const f = finals[k]; n.textContent = f.split('').map((ch, j) => (ch === ' ' || ch === '-' || j < dec - k * 3 ? ch : GL[(Math.random() * GL.length) | 0])).join(''); }); if (dec > 16) { clearInterval(decT); tNodes.forEach((n, k) => { n.textContent = finals[k]; }); } }, 50);
     const box = $('#boot-lines'), bar = $('#boot-progress'); let i = 0, done = false, pct = 0, pctTimer = null;
     const finish = () => {
-      if (done) return; done = true; clearInterval(pctTimer); bar.style.width = '100%'; NV.text('#boot-pct', '100%');
+      if (done) return; done = true; clearInterval(pctTimer); clearInterval(decT); tNodes.forEach((n, k) => { n.textContent = finals[k]; }); NV.text('#boot-phase', 'ALL SYSTEMS NOMINAL'); bar.style.width = '100%'; NV.text('#boot-pct', '100%');
       const h = new Date().getHours(); $('#boot-welcome').textContent = `${h < 5 ? 'Good evening' : h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening'}, Sir.`;
       el.classList.add('welcome'); NV.audio.bootUp();
       setTimeout(() => { el.classList.add('done'); document.body.classList.add('booted'); }, 650); setTimeout(() => el.remove(), 1500);
     };
-    pctTimer = setInterval(() => { pct = Math.min(99, pct + 1 + Math.random() * 2.4); NV.text('#boot-pct', NV.pad(pct) + '%'); tiles.forEach((t, k) => t.classList.toggle('on', k / tiles.length < pct / 100)); }, 30);
-    const step = () => { if (done) return; if (i < lines.length) { const d = NV.el('div'); d.innerHTML = `<span>${lines[i]}</span><span class="ok">OK</span>`; box.appendChild(d); while (box.children.length > 5) box.firstChild.remove(); i++; bar.style.width = (i / lines.length * 100) + '%'; setTimeout(step, 250); } else setTimeout(finish, 250); };
+    pctTimer = setInterval(() => { const tgt = Math.min(99, ((i + 0.6) / lines.length) * 100); pct = Math.min(tgt, pct + 0.3 + Math.max(0, tgt - pct) * 0.18); NV.text('#boot-pct', NV.pad(pct) + '%'); tiles.forEach((t, k) => t.classList.toggle('on', k / tiles.length < pct / 100)); }, 30);
+    const step = () => { if (done) return; NV.text('#boot-phase', phases[Math.min(2, Math.floor(i / lines.length * 3))]); if (i < lines.length) { const d = NV.el('div'); d.innerHTML = `<span>${lines[i]}</span><span class="ok">OK</span>`; box.appendChild(d); while (box.children.length > 5) box.firstChild.remove(); i++; bar.style.width = (i / lines.length * 100) + '%'; setTimeout(step, 200); } else setTimeout(finish, 250); };
     setTimeout(step, 250); el.addEventListener('click', finish);
   }
 
@@ -294,12 +309,13 @@
 
   // ---------- Init ----------
   function init() {
-    buildThemeCards();
+    NV.perf.init(); buildThemeCards();
+    ['cam-canvas', 'ar-canvas', 'col-canvas', 'ocr-canvas'].forEach((id) => { const c = $('#' + id); if (c) c._dprKind = 'cam'; });
     NV.bg.init($('#bg-canvas')); NV.fx.init($('#fx-canvas'));
     SN.init(); NV.jarvis.init(); NV.cam.init();
     NV.motion.init(); NV.nav.init(); NV.meter.init(); NV.threat.init(); NV.radar.init(); NV.status.init(); NV.log.init(); NV.timer.init();
     NV.light.init(); NV.cinco.init();
-    ['optics', 'detect', 'sky', 'hotline', 'badges', 'voice'].forEach((m) => { const mod = NV['_init_' + m]; if (mod) mod(); });
+    ['optics', 'detect', 'sky', 'hotline', 'badges', 'brain', 'voice', 'console', 'extras'].forEach((m) => { const mod = NV['_init_' + m]; if (mod) mod(); });
     NV.tools.init();
     bindSettings(); initPWA();
     SN.on('mode', modeChip);

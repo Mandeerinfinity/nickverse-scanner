@@ -102,7 +102,7 @@
       WX.failT = Date.now(); const c = NV.store.get('wx', null);
       if (c && c.data) { WX.place = c.place; WX.data = c.data; WX.t = c.t; WX.cached = true; WX.units = c.units; render(); badge('CACHED', 'warn'); NV.toast(`Weather service unreachable, Sir. Showing the cached report from ${ago(c.t)}.`, 3200); }
       else { WX.place = p; badge('OFFLINE', 'bad'); NV.text('#wx-place', p.name); NV.text('#wx-desc', 'No atmospheric data yet. Connect to the internet and press refresh.'); NV.text('#wx-quip', 'The sky map below still works offline, Sir.'); }
-    } finally { WX.busy = false; $('#wx-refresh').classList.remove('spin'); WX.skyT = 0; }
+    } finally { WX.busy = false; $('#wx-refresh').classList.remove('spin'); WX.skyT = 0; NV.emit('weather', { ok: !!WX.data, cached: WX.cached }); }
   }
   const quip = (k, day) => NV.pick(QUIPS[k === 'clear' && !day ? 'clearN' : k]);
   function ago(t) { const m = Math.round((Date.now() - t) / 60000); return m < 1 ? 'just now' : m < 60 ? m + ' min ago' : m < 1440 ? Math.round(m / 60) + ' h ago' : Math.round(m / 1440) + ' d ago'; }
@@ -243,6 +243,24 @@
     if (!WX.agoT || t - WX.agoT > 30000) { WX.agoT = t; if (WX.data) NV.text('#wx-updated', (WX.cached ? 'cached · ' : '') + 'updated ' + ago(WX.t)); }
   };
   WX.primary = () => fetchWx(WX.place || fallbackPlace(), { speak: true });
+  // Summary for JARVIS / Daily Briefing (uses live data, else the cached report; sky maths works offline)
+  NV.sky.summary = () => {
+    let d = WX.data, place = WX.place, t = WX.t, cached = WX.cached;
+    if (!d) { const c = NV.store.get('wx', null); if (c && c.data) { d = c.data; place = c.place; t = c.t; cached = true; } }
+    const o = place || fallbackPlace(), sky = computeSky(new Date(), o.lat, o.lon), m = sky.moon, st = sunTimes(o.lat, o.lon);
+    const out = { place: o.name || 'your location', moon: { phase: m.phase, illum: m.illum, name: phaseName(m.phase), alt: m.alt }, sunrise: st.rise, sunset: st.set, dayLen: st.len, planets: sky.bodies ? sky.bodies.filter((b) => b.kind === 'planet' && b.alt > 0).map((b) => b.name) : [] };
+    if (d && d.current) {
+      const c = d.current, dl = d.daily || {}, u = (d.current_units && d.current_units.temperature_2m) || (F() ? '°F' : '°C');
+      const hp = (d.hourly && d.hourly.precipitation_probability) || [], hi = (d.hourly && d.hourly.time) || [], now = Date.now();
+      let rain = 0; for (let i = 0; i < hi.length; i++) { const tt = Date.parse(hi[i]); if (tt >= now - 3600e3 && tt <= now + 12 * 3600e3) rain = Math.max(rain, hp[i] || 0); }
+      Object.assign(out, { ok: true, cached, t, temp: Math.round(c.temperature_2m), feels: Math.round(c.apparent_temperature), unit: u, desc: DESC[c.weather_code] || 'Unclassified', kind: KIND(c.weather_code), code: c.weather_code, isDay: !!c.is_day,
+        wind: Math.round(c.wind_speed_10m), windUnit: (d.current_units && d.current_units.wind_speed_10m) || '', humidity: c.relative_humidity_2m,
+        hi: dl.temperature_2m_max ? Math.round(dl.temperature_2m_max[0]) : null, lo: dl.temperature_2m_min ? Math.round(dl.temperature_2m_min[0]) : null, uv: dl.uv_index_max ? dl.uv_index_max[0] : null, rain,
+        sunrise: dl.sunrise ? String(dl.sunrise[0]).slice(11, 16) : st.rise, sunset: dl.sunset ? String(dl.sunset[0]).slice(11, 16) : st.set });
+    }
+    return out;
+  };
+  NV.sky.paintMoon = paintMoon; NV.sky.phaseName = phaseName; NV.sky.refresh = () => fetchWx(WX.place || fallbackPlace(), {});
   WX.useLocation = () => {
     if (!navigator.geolocation) { NV.toast('Geolocation is not available here, Sir. Search for a city instead.'); return; }
     badge('LOCATING…', 'warn');
